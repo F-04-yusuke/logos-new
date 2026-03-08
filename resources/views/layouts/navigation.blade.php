@@ -1,8 +1,15 @@
 <nav x-data="{ open: false }" class="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
     <!-- Primary Navigation Menu -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="w-full px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
-            <div class="flex">
+            <div class="flex items-center">
+                
+                <div class="shrink-0 flex items-center">
+                    <a href="{{ route('topics.index') }}">
+                        <x-application-logo class="block h-9 w-auto fill-current text-gray-800 dark:text-gray-200" />
+                    </a>
+                </div>
+
                 <!-- Logo -->
                 <div class="shrink-0 flex items-center">
                     <a href="{{ route('dashboard') }}">
@@ -10,11 +17,29 @@
                     </a>
                 </div>
 
+                <div class="flex-1 flex items-center justify-center px-2 lg:ml-6">
+                    <div class="max-w-lg w-full lg:max-w-xs">
+                        <form method="GET" action="{{ route('topics.index') }}" class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.814A6 6 0 012 8z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                            <input type="search" name="search" placeholder="トピックを検索..." value="{{ request('search') }}" class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white dark:bg-gray-900 dark:border-gray-700 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        </form>
+                    </div>
+                </div>
+
                 <!-- Navigation Links -->
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                         {{ __('Dashboard') }}
                     </x-nav-link>
+                    @if(auth()->id() === 1)
+                        <x-nav-link :href="route('categories.index')" :active="request()->routeIs('categories.*')">
+                            カテゴリ管理
+                        </x-nav-link>
+                    @endif
                 </div>
             </div>
 
@@ -70,6 +95,12 @@
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                 {{ __('Dashboard') }}
             </x-responsive-nav-link>
+            
+            @if(auth()->id() === 1)
+                    <x-responsive-nav-link :href="route('categories.index')" :active="request()->routeIs('categories.*')">
+                        カテゴリ管理
+                    </x-nav-link>
+            @endif
         </div>
 
         <!-- Responsive Settings Options -->

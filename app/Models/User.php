@@ -45,7 +45,7 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
-    
+
     // 1人のユーザーは複数のトピックを作れる（1対多）
     public function topics()
     {
@@ -56,5 +56,11 @@ class User extends Authenticatable
     public function posts()
     {
         return $this->hasMany(Post::class);
+    }
+    
+    // このユーザーが保存（ブックマーク）したトピックを取得する
+    public function savedTopics()
+    {
+        return $this->belongsToMany(Topic::class, 'bookmarks')->withTimestamps();
     }
 }

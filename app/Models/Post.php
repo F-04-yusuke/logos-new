@@ -23,4 +23,21 @@ class Post extends Model
     {
         return $this->belongsTo(Topic::class);
     }
+
+// 1つの投稿は、複数のいいねを持つ（1対多）
+    public function likes()
+    {
+        return $this->hasMany(Like::class);
+    }
+
+    // 🔽 ログイン中のユーザーが、すでにこの投稿に「いいね」しているか判定する便利な機能
+    public function isLikedBy($user)
+    {
+        // ユーザー情報がない（未ログイン等）場合は false（してない）を返す
+        if (!$user) {
+            return false;
+        }
+        // likes() とカッコをつけ、exists() で直接データベースに「存在するか」を確認します
+        return $this->likes()->where('user_id', $user->id)->exists();
+    }
 }
