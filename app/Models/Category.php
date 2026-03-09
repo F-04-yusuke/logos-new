@@ -27,4 +27,10 @@ class Category extends Model
     {
         return $this->belongsTo(Category::class, 'parent_id');
     }
+
+    // このカテゴリに属するトピックを取得するための架け橋
+    public function topics()
+    {
+        return $this->belongsToMany(Topic::class, 'category_topic')->withTimestamps();
+    }
 }

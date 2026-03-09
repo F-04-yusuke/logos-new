@@ -12,9 +12,34 @@ class TopicController extends Controller
     // 新しく Request $request を追加して、検索窓からの文字を受け取れるようにします
     public function index(\Illuminate\Http\Request $request)
     {
-        // ① まず、「トピックを新しい順に並べる」という基本の検索準備をします
+        // 🌟 新機能1：左上タブ用のカテゴリ別最新トピック
+        // 大分類（親がないカテゴリ）と、その子供（中分類）を順番通りに取得します
+        $tabCategories = \App\Models\Category::whereNull('parent_id')
+            ->orderBy('sort_order')
+            ->with('children') // 🌟 修正：中分類（children）も一緒に読み込む
+            ->get();
+
+        // 🌟 修正：各大分類について、「自分自身のID」と「ぶら下がっている中分類のID」を合わせた
+        // すべてのトピックの中から、最新5件を取得して $category->latest_topics に入れます
+        foreach ($tabCategories as $category) {
+            $allCategoryIds = $category->children->pluck('id')->push($category->id);
+            $category->latest_topics = \App\Models\Topic::whereHas('categories', function($q) use ($allCategoryIds) {
+                $q->whereIn('categories.id', $allCategoryIds);
+            })->withCount('posts')->latest()->take(5)->get();
+        }
+
+        // 🌟 新機能2：右側の総合人気トピック
+        // エビデンス（投稿）が多い順にトップ10件を取得します
+        $popularTopics = \App\Models\Topic::withCount('posts')
+            ->orderBy('posts_count', 'desc')
+            ->latest()
+            ->take(10)
+            ->get();
+
+        // ① まず、「トピック」の基本の検索準備をします
         // （※ まだ get() を使ってデータを取り出しません。絞り込むかもしれないからです）
-        $query = \App\Models\Topic::latest();
+        // （※ 並び替えに使うため、エビデンスの「数（posts_count）」も一緒に数えておきます）
+        $query = \App\Models\Topic::withCount('posts');
 
         // ② もし、画面から「search」という名前のデータ（キーワード）が送られてきていたら…
         if ($request->filled('search')) {
@@ -24,7 +49,7 @@ class TopicController extends Controller
             // ③ そのキーワードが「タイトル」または「内容」に含まれているかを探す（曖昧検索）
             $query->where(function($q) use ($keyword) {
                 $q->where('title', 'like', '%' . $keyword . '%')
-                ->orWhere('content', 'like', '%' . $keyword . '%');
+                  ->orWhere('content', 'like', '%' . $keyword . '%');
             });
         }
 
@@ -33,22 +58,38 @@ class TopicController extends Controller
         $selectedCategory = null;
         if ($request->filled('category')) {
             $categoryId = $request->category;
-            // 画面に「〇〇のトピック」と表示するために、カテゴリの情報を取得しておく
-            $selectedCategory = \App\Models\Category::find($categoryId);
+            // 🌟 修正：画面に「〇〇のトピック」と表示するために、カテゴリの情報（中分類も含めて）を取得しておく
+            $selectedCategory = \App\Models\Category::with('children')->find($categoryId);
             
-            // 中間テーブル（架け橋）を渡って、このカテゴリIDを持っているトピックだけを探す魔法
             if ($selectedCategory) {
-                $query->whereHas('categories', function($q) use ($categoryId) {
-                    $q->where('categories.id', $categoryId);
+                // 🌟 修正：選ばれたのが大分類だった場合、その下にある中分類のトピックも表示できるようにIDをまとめる
+                $searchCategoryIds = $selectedCategory->children->pluck('id')->push($selectedCategory->id);
+
+                $query->whereHas('categories', function($q) use ($searchCategoryIds) {
+                    $q->whereIn('categories.id', $searchCategoryIds);
                 });
             }
         }
 
-        // ④ 絞り込みが終わった状態のデータを、一気にデータベースから取得します
-        $topics = $query->get();
+        // 🔄 並び替え（ソート）の処理
+        if ($request->filled('sort')) {
+            if ($request->sort === 'oldest') {
+                $query->oldest();
+            } elseif ($request->sort === 'popular') {
+                $query->orderBy('posts_count', 'desc')->latest();
+            } else {
+                $query->latest();
+            }
+        } else {
+            // デフォルトは新着順に並べます
+            $query->latest(); 
+        }
 
-        // ⑤ 取得したデータを、トップページ（topics.index）に渡して表示します
-        return view('topics.index', compact('topics'));
+        // 全件取得（get）ではなく、10件ごとのページ分割（paginate）にして取得します
+        $topics = $query->paginate(10);
+
+        // 取得したすべてのデータ（$topics, $tabCategories, $popularTopics, $selectedCategory）を画面に渡します
+        return view('topics.index', compact('topics', 'tabCategories', 'popularTopics', 'selectedCategory'));
     }
 
     // 🔽 トピック新規作成画面を表示する処理（create）

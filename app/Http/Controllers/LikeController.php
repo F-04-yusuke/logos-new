@@ -38,4 +38,18 @@ class LikeController extends Controller
         // ⑤ 処理が終わったら、元の画面（トピック詳細画面）にそのまま戻ります。
         return back();
     }
+
+    // いいねしたエビデンス一覧画面を表示する処理
+    public function index()
+    {
+        // 自分がいいねした投稿を、トピック情報・投稿者情報・全体のいいね数と一緒に取得する
+        $likedPosts = auth()->user()->likedPosts()
+            ->with(['topic', 'user']) // 関連データをまとめて取得
+            ->withCount('likes')      // 🌟 最新のいいね数を計算して「likes_count」として取得
+            ->latest()                // 新しい順に並べる
+            ->get();
+        
+        return view('likes.index', compact('likedPosts'));
+    }
+
 }

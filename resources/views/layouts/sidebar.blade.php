@@ -1,5 +1,5 @@
 <aside :class="sidebarOpen ? 'w-64' : 'w-16'" 
-        class="flex-shrink-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col h-full transition-all duration-300 ease-in-out overflow-hidden">
+        class="flex-shrink-0 bg-white dark:bg-[#1e1f20] border-r border-gray-200 dark:border-transparent flex flex-col h-full transition-all duration-300 ease-in-out overflow-hidden">
 
     <div class="h-16 flex items-center px-4 shrink-0 border-b border-transparent">
         <button @click="sidebarOpen = !sidebarOpen" class="inline-flex items-center justify-center p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-900 dark:hover:text-gray-300 focus:outline-none transition">
@@ -74,7 +74,7 @@
                         </a>
                     </li>
                     <li>
-                        <a href="#" class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+                        <a href="{{ route('likes.index') }}" class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
                             <span class="text-lg">👍</span><span class="ms-3">参考になった</span>
                         </a>
                     </li>

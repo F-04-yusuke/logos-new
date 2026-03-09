@@ -36,6 +36,9 @@ Route::post('/topics/{topic}/posts', [\App\Http\Controllers\PostController::clas
 // いいねボタンを押したときのルール
 Route::post('/posts/{post}/like', [\App\Http\Controllers\LikeController::class, 'store'])->name('likes.store')->middleware('auth');
 
+// マイページ用：参考になった（いいねした）エビデンス一覧を表示するルール
+Route::get('/liked-posts', [\App\Http\Controllers\LikeController::class, 'index'])->name('likes.index')->middleware('auth');
+
 // トピックの保存（ブックマーク）と解除のルール
 Route::post('/topics/{topic}/bookmarks', [\App\Http\Controllers\BookmarkController::class, 'store'])->name('bookmarks.store')->middleware('auth');
 Route::delete('/topics/{topic}/bookmarks', [\App\Http\Controllers\BookmarkController::class, 'destroy'])->name('bookmarks.destroy')->middleware('auth');

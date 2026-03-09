@@ -16,9 +16,39 @@ class PostController extends Controller
         // ユーザーがフォームから送ってきたデータが正しいルールか確認します
         $validated = $request->validate([
             'url' => 'required|url|max:255',        // URL：必須、URLの形式であること、255文字以内
-            'category' => 'required|string|max:255', // 分類（賛成/反対など）：必須
+            'category' => 'required|string|max:255', // 分類：必須
             'comment' => 'nullable|string',          // コメント：任意（未入力でもOK）
         ]);
+
+        $url = $validated['url'];
+        $title = null;
+        $thumbnail_url = null;
+
+        // 🌟 追加：URL先のサイトから、タイトルとサムネイル画像を自動取得する（簡易スクレイピング）
+        try {
+            // 相手のサイトに弾かれないように「普通のブラウザからのアクセスですよ」と偽装する
+            $context = stream_context_create([
+                'http' => ['header' => "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36\r\n"]
+            ]);
+            $html = @file_get_contents($url, false, $context);
+
+            if ($html) {
+                // ① <title>タグを探す
+                if (preg_match('/<title[^>]*>(.*?)<\/title>/is', $html, $matches)) {
+                    $title = html_entity_decode($matches[1]);
+                }
+                // ② OGPのタイトルを探す（こっちの方が正確なので上書き）
+                if (preg_match('/<meta property="og:title" content="(.*?)"/is', $html, $matches)) {
+                    $title = html_entity_decode($matches[1]);
+                }
+                // ③ OGPの画像（サムネイル）を探す
+                if (preg_match('/<meta property="og:image" content="(.*?)"/is', $html, $matches)) {
+                    $thumbnail_url = html_entity_decode($matches[1]);
+                }
+            }
+        } catch (\Exception $e) {
+            // もし取得に失敗しても、エラーで止めずに「URLのみ」で保存を続行する
+        }
 
         // 2. データベースに保存
         // ログイン中のユーザー情報に紐付けて、新しい投稿を作成します
@@ -27,6 +57,8 @@ class PostController extends Controller
             'url' => $validated['url'],
             'category' => $validated['category'],
             'comment' => $validated['comment'] ?? null, // コメントが空の場合はnullを入れる
+            'title' => $title, // 取得したタイトル
+            'thumbnail_url' => $thumbnail_url, // 取得したサムネイル画像
         ]);
 
         // 3. 元の詳細画面（topics.show）に戻り、成功メッセージを表示する

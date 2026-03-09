@@ -57,10 +57,16 @@ class User extends Authenticatable
     {
         return $this->hasMany(Post::class);
     }
-    
+
     // このユーザーが保存（ブックマーク）したトピックを取得する
     public function savedTopics()
     {
         return $this->belongsToMany(Topic::class, 'bookmarks')->withTimestamps();
+    }
+
+    // 自分が「いいね（参考になった）」を押した投稿を取得する機能
+    public function likedPosts()
+    {
+        return $this->belongsToMany(Post::class, 'likes')->withTimestamps();
     }
 }
