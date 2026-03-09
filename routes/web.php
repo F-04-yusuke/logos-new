@@ -74,4 +74,11 @@ Route::patch('/categories/{category}', [\App\Http\Controllers\CategoryController
 Route::delete('/categories/{category}', [\App\Http\Controllers\CategoryController::class, 'destroy'])
     ->name('categories.destroy')->middleware(['auth', \App\Http\Middleware\IsAdmin::class]);
 
+// コメント機能のルール
+Route::post('/topics/{topic}/comments', [\App\Http\Controllers\CommentController::class, 'store'])->name('comments.store')->middleware('auth');
+Route::patch('/comments/{comment}', [\App\Http\Controllers\CommentController::class, 'update'])->name('comments.update')->middleware('auth');
+Route::delete('/comments/{comment}', [\App\Http\Controllers\CommentController::class, 'destroy'])->name('comments.destroy')->middleware('auth');
+Route::post('/comments/{comment}/like', [\App\Http\Controllers\CommentController::class, 'toggleLike'])->name('comments.like')->middleware('auth');
+
 require __DIR__.'/auth.php';
+

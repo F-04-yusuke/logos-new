@@ -49,7 +49,7 @@ class TopicController extends Controller
             // ③ そのキーワードが「タイトル」または「内容」に含まれているかを探す（曖昧検索）
             $query->where(function($q) use ($keyword) {
                 $q->where('title', 'like', '%' . $keyword . '%')
-                  ->orWhere('content', 'like', '%' . $keyword . '%');
+                    ->orWhere('content', 'like', '%' . $keyword . '%');
             });
         }
 
@@ -92,7 +92,7 @@ class TopicController extends Controller
         return view('topics.index', compact('topics', 'tabCategories', 'popularTopics', 'selectedCategory'));
     }
 
-    // 🔽 トピック新規作成画面を表示する処理（create）
+    // トピック新規作成画面を表示する処理（create）
     public function create()
     {
         // 大分類（親がいないカテゴリ）と、それに紐づく中分類をセットで取得して画面に渡す
@@ -101,7 +101,7 @@ class TopicController extends Controller
         return view('topics.create', compact('categories'));
     }
 
-    // 🔽 新しいトピックをデータベースに保存する処理（store）
+    // 新しいトピックをデータベースに保存する処理（store）
     public function store(\Illuminate\Http\Request $request)
     {
         // 1. 入力チェック（バリデーション）
@@ -137,7 +137,8 @@ class TopicController extends Controller
     public function show(\Illuminate\Http\Request $request, \App\Models\Topic $topic)
     {
         // ① まず、このトピックに紐づくエビデンス（投稿）を取得する準備をします
-        $query = $topic->posts();
+        // URLに「?category=YouTube」などがついていたら、その分類だけで絞り込む
+        $query = $topic->posts()->with('user');
 
         // ② メディア分類（YouTube、記事など）での絞り込み
         if ($request->filled('category')) {
@@ -152,7 +153,7 @@ class TopicController extends Controller
             } elseif ($request->sort === 'popular') {
                 // 🌟 人気順（いいねの数が多い順）
                 // withCount('likes') でいいねの数を計算し、orderBy で多い順（desc）に並べ替えます
-                $query->withCount('likes')->orderBy('likes_count', 'desc');
+                $query->withCount('likes')->orderBy('likes_count', 'desc')->latest();
             } else {
                 // 新着順（newest）
                 $query->latest();
@@ -165,8 +166,32 @@ class TopicController extends Controller
         // ④ 絞り込みと並び替えが終わった状態のデータを取得
         $posts = $query->get();
 
-        // ⑤ 画面に渡す
-        return view('topics.show', compact('topic', 'posts'));
+        // 🌟 新機能：コメントタブ用のデータを取得する
+        // コメントにも「いいね数（参考になった数）」をくっつけて取得する準備をします
+        $commentQuery = $topic->comments()->with('user')->withCount('likes');
+        
+        // 🌟 新機能：コメント用の並び替え（comment_sort）処理
+        if ($request->filled('comment_sort')) {
+            if ($request->comment_sort === 'oldest') {
+                $commentQuery->oldest();
+            } elseif ($request->comment_sort === 'popular') {
+                $commentQuery->orderBy('likes_count', 'desc')->latest();
+            } else {
+                $commentQuery->latest();
+            }
+        } else {
+            $commentQuery->latest(); // デフォルトは新着順
+        }
+        $comments = $commentQuery->get();
+        
+        // ログイン中のユーザーが既にコメントしているかチェック（1人1件の制限用）
+        $userComment = null;
+        if (auth()->check()) {
+            $userComment = $topic->comments()->where('user_id', auth()->id())->first();
+        }
+
+        // ⑤ 画面に渡す（🌟 荷物リストに comments と userComment を追加！）
+        return view('topics.show', compact('topic', 'posts', 'comments', 'userComment'));
     }
 
 // 編集画面（View）を表示する処理（edit）

@@ -43,5 +43,10 @@ class Topic extends Model
         }
         return $this->belongsToMany(User::class, 'bookmarks')->where('user_id', $user->id)->exists();
     }
-    
+
+    // このトピックについたコメントを取得する
+    public function comments()
+    {
+        return $this->hasMany(Comment::class);
+    }
 }
