@@ -150,17 +150,16 @@ class TopicController extends Controller
             if ($request->sort === 'oldest') {
                 // 古い順
                 $query->oldest();
-            } elseif ($request->sort === 'popular') {
-                // 🌟 人気順（いいねの数が多い順）
-                // withCount('likes') でいいねの数を計算し、orderBy で多い順（desc）に並べ替えます
-                $query->withCount('likes')->orderBy('likes_count', 'desc')->latest();
-            } else {
-                // 新着順（newest）
+            } elseif ($request->sort === 'newest') {
+                // 新着順
                 $query->latest();
+            } else {
+                // 🌟 変更：指定がない・popularの場合は「人気順（いいねの数が多い順）」
+                $query->withCount('likes')->orderBy('likes_count', 'desc')->latest();
             }
         } else {
-            // 何も指定されていない場合のデフォルトは「新着順」
-            $query->latest();
+            // 🌟 変更：デフォルトを「人気順」にしました
+            $query->withCount('likes')->orderBy('likes_count', 'desc')->latest();
         }
 
         // ④ 絞り込みと並び替えが終わった状態のデータを取得
@@ -174,13 +173,15 @@ class TopicController extends Controller
         if ($request->filled('comment_sort')) {
             if ($request->comment_sort === 'oldest') {
                 $commentQuery->oldest();
-            } elseif ($request->comment_sort === 'popular') {
-                $commentQuery->orderBy('likes_count', 'desc')->latest();
-            } else {
+            } elseif ($request->comment_sort === 'newest') {
                 $commentQuery->latest();
+            } else {
+                // 🌟 変更：指定がない・popularの場合は「人気順」
+                $commentQuery->orderBy('likes_count', 'desc')->latest();
             }
         } else {
-            $commentQuery->latest(); // デフォルトは新着順
+            // 🌟 変更：デフォルトを「人気順」にしました
+            $commentQuery->orderBy('likes_count', 'desc')->latest();
         }
         $comments = $commentQuery->get();
         
@@ -194,7 +195,7 @@ class TopicController extends Controller
         return view('topics.show', compact('topic', 'posts', 'comments', 'userComment'));
     }
 
-// 編集画面（View）を表示する処理（edit）
+    // 編集画面（View）を表示する処理（edit）
     public function edit(\App\Models\Topic $topic)
     {
         // セキュリティ対策：他人のトピックの編集画面は開けないようにブロック
