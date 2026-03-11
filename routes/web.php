@@ -3,6 +3,8 @@
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TopicController;
+// ファイルの上部（他のuse宣言が並んでいる場所）に追加
+use App\Http\Controllers\AnalysisController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -67,7 +69,7 @@ Route::post('/categories', [\App\Http\Controllers\CategoryController::class, 'st
     ->name('categories.store')
     ->middleware(['auth', \App\Http\Middleware\IsAdmin::class]);
 
-// 新規追加：カテゴリの更新（編集）と削除のルール
+// カテゴリの更新（編集）と削除のルール
 Route::patch('/categories/{category}', [\App\Http\Controllers\CategoryController::class, 'update'])
     ->name('categories.update')->middleware(['auth', \App\Http\Middleware\IsAdmin::class]);
 
@@ -79,6 +81,16 @@ Route::post('/topics/{topic}/comments', [\App\Http\Controllers\CommentController
 Route::patch('/comments/{comment}', [\App\Http\Controllers\CommentController::class, 'update'])->name('comments.update')->middleware('auth');
 Route::delete('/comments/{comment}', [\App\Http\Controllers\CommentController::class, 'destroy'])->name('comments.destroy')->middleware('auth');
 Route::post('/comments/{comment}/like', [\App\Http\Controllers\CommentController::class, 'toggleLike'])->name('comments.like')->middleware('auth');
+
+// 分析ツール (PROプラン用)
+Route::middleware('auth')->prefix('tools')->name('tools.')->group(function () {
+    Route::get('/tree', function () { return view('tools.tree'); })->name('tree');
+    Route::get('/matrix', function () { return view('tools.matrix'); })->name('matrix');
+    Route::get('/swot', function () { return view('tools.swot'); })->name('swot');
+
+// 保存用のPOSTルート
+    Route::post('/store', [AnalysisController::class, 'store'])->name('store');
+});
 
 require __DIR__.'/auth.php';
 
