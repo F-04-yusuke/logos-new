@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Analysis;
+use Illuminate\Support\Facades\Http;
 
 class AnalysisController extends Controller
 {
@@ -63,5 +64,48 @@ class AnalysisController extends Controller
         }
 
         return view('analyses.show', compact('analysis'));
+    }
+
+    // Gemini APIと通信してAIの回答を取得する処理
+    public function aiAssist(Request $request)
+    {
+        $request->validate([
+            'prompt' => 'required|string',
+            'context' => 'nullable|string', // 画面の現在のツリーや表のデータ
+        ]);
+
+        $apiKey = env('GEMINI_API_KEY');
+        if (!$apiKey) {
+            return response()->json(['error' => 'APIキーが設定されていません。システム管理者にお問い合わせください。'], 500);
+        }
+
+        // プロンプトの組み立て（システムプロンプトとしてコンサルの役割を与えます）
+        $fullPrompt = "あなたは政治・経済の議論を整理するプロのコンサルタントです。\n" 
+                    . "以下の【現在の状況・データ】を踏まえて、ユーザーの【指示】に的確に答えてください。\n\n"
+                    . "【現在の状況・データ】\n" . $request->context . "\n\n"
+                    . "【指示】\n" . $request->prompt;
+
+        // 🌟 修正：リストに確実に存在していた「gemini-2.5-flash」を使用します！
+        $response = Http::withHeaders([
+            'Content-Type' => 'application/json',
+        ])->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={$apiKey}", [
+            'contents' => [
+                [
+                    'parts' => [
+                        ['text' => $fullPrompt]
+                    ]
+                ]
+            ]
+        ]);
+
+        if ($response->successful()) {
+            $result = $response->json();
+            $text = $result['candidates'][0]['content']['parts'][0]['text'] ?? 'AIからの回答を取得できませんでした。';
+            return response()->json(['reply' => $text]);
+        }
+
+        // エラー時の詳細表示
+        $errorBody = $response->body();
+        return response()->json(['error' => "APIエラー詳細: " . $errorBody], 500);
     }
 }

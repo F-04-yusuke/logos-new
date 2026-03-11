@@ -316,9 +316,9 @@
                     @else
                         <div class="space-y-3">
                             @foreach($topicAnalyses as $analysis)
-                                <div class="p-4 bg-white dark:bg-[#1e1f20] rounded-lg border border-gray-200 dark:border-transparent shadow-sm transition-colors">
+                                <div class="p-4 bg-white dark:bg-[#1e1f20] rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm transition-colors">
                                     
-                                    <div class="flex justify-between items-center mb-2">
+                                    <div class="flex justify-between items-center mb-3">
                                         <div class="flex items-center gap-2">
                                             <span class="font-bold text-sm text-gray-900 dark:text-gray-100">{{ $analysis->user->name }}</span>
                                             @if($analysis->type === 'tree') <span class="text-[9px] font-bold bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-400 px-1.5 py-0.5 rounded">ロジックツリー</span>
@@ -329,48 +329,86 @@
                                         <span class="text-xs text-gray-500">{{ $analysis->created_at->format('Y-m-d H:i') }}</span>
                                     </div>
 
-                                    <h4 class="font-bold text-base text-gray-900 dark:text-gray-100 mb-2">{{ $analysis->title }}</h4>
+                                    <h4 class="font-bold text-base text-gray-900 dark:text-gray-100 mb-3">{{ $analysis->title }}</h4>
 
-                                    <div class="relative max-h-40 overflow-hidden rounded-md border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#131314] p-3 text-xs">
+                                    <div class="rounded-md border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#131314] p-4 text-sm mb-4 overflow-hidden w-full" style="max-height: 400px; -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent 100%); mask-image: linear-gradient(to bottom, black 80%, transparent 100%);">
                                         
                                         @php $previewData = $analysis->data; @endphp
                                         
                                         @if($analysis->type === 'tree' && !empty($previewData))
-                                            <div class="space-y-2 opacity-80">
-                                                @foreach(array_slice($previewData, 0, 3) as $node)
-                                                    <div class="flex gap-2"><span class="font-bold text-blue-500 shrink-0">{{ $node['speaker'] ?? '' }}:</span><span class="text-gray-700 dark:text-gray-300 truncate">{{ $node['text'] ?? '' }}</span></div>
+                                            @php 
+                                                $nodes = isset($previewData['nodes']) ? $previewData['nodes'] : $previewData;
+                                                $meta = $previewData['meta'] ?? null;
+                                            @endphp
+                                            
+                                            @if($meta && (!empty($meta['url']) || !empty($meta['description'])))
+                                                <div class="mb-4 p-3 bg-white dark:bg-[#1e1f20] rounded border border-gray-200 dark:border-gray-700">
+                                                    <div class="text-[10px] font-bold text-blue-600 dark:text-blue-400 mb-1">事前情報</div>
+                                                    @if(!empty($meta['description'])) <p class="text-xs text-gray-800 dark:text-gray-300 mb-1.5">{{ $meta['description'] }}</p> @endif
+                                                    @if(!empty($meta['url'])) <a href="{{ $meta['url'] }}" target="_blank" class="text-xs text-blue-500 hover:underline truncate block">{{ $meta['url'] }}</a> @endif
+                                                </div>
+                                            @endif
+
+                                            <div class="space-y-3">
+                                                @foreach(array_slice($nodes, 0, 5) as $node)
+                                                    <div class="flex gap-2">
+                                                        <span class="font-bold text-blue-500 shrink-0">{{ $node['speaker'] ?? '' }}:</span>
+                                                        <span class="text-gray-700 dark:text-gray-300 truncate">{{ $node['text'] ?? '' }}</span>
+                                                    </div>
                                                     @if(!empty($node['children']))
-                                                        <div class="ml-4 flex gap-2 border-l-2 border-gray-300 dark:border-gray-700 pl-2"><span class="font-bold text-gray-500 shrink-0">↳ {{ $node['children'][0]['speaker'] ?? '' }}:</span><span class="text-gray-600 dark:text-gray-400 truncate">{{ $node['children'][0]['text'] ?? '' }}</span></div>
+                                                        @foreach(array_slice($node['children'], 0, 1) as $child)
+                                                            <div class="ml-4 flex gap-2 border-l-2 border-gray-300 dark:border-gray-700 pl-2">
+                                                                <span class="font-bold text-gray-500 shrink-0">↳ {{ $child['speaker'] ?? '' }}:</span>
+                                                                <span class="text-gray-600 dark:text-gray-400 truncate">{{ $child['text'] ?? '' }}</span>
+                                                            </div>
+                                                        @endforeach
                                                     @endif
                                                 @endforeach
                                             </div>
                                         @elseif($analysis->type === 'matrix' && isset($previewData['items']))
-                                            <div class="opacity-80">
-                                                <div class="font-bold text-gray-500 mb-1">【評価項目】</div>
-                                                <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1 ml-1">
-                                                    @foreach(array_slice($previewData['items'], 0, 4) as $item)
+                                            <div>
+                                                <div class="font-bold text-gray-500 mb-2">【評価項目一覧】</div>
+                                                <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-2 ml-1">
+                                                    @foreach(array_slice($previewData['items'], 0, 5) as $item)
                                                         <li class="truncate">{{ $item['itemTitle'] ?? '' }}</li>
                                                     @endforeach
                                                 </ul>
                                             </div>
                                         @elseif($analysis->type === 'swot')
-                                            <div class="grid grid-cols-2 gap-2 opacity-80">
-                                                <div><span class="font-bold text-blue-500">S (強み):</span><br><span class="text-gray-700 dark:text-gray-300 truncate block">{{ $previewData['strengths'][0] ?? '記載なし' }}</span></div>
-                                                <div><span class="font-bold text-red-500">W (弱み):</span><br><span class="text-gray-700 dark:text-gray-300 truncate block">{{ $previewData['weaknesses'][0] ?? '記載なし' }}</span></div>
-                                                <div><span class="font-bold text-green-500">O (機会):</span><br><span class="text-gray-700 dark:text-gray-300 truncate block">{{ $previewData['opportunities'][0] ?? '記載なし' }}</span></div>
-                                                <div><span class="font-bold text-yellow-500">T (脅威):</span><br><span class="text-gray-700 dark:text-gray-300 truncate block">{{ $previewData['threats'][0] ?? '記載なし' }}</span></div>
+                                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                <div>
+                                                    <span class="font-bold text-blue-500 mb-1 inline-block">S (強み):</span>
+                                                    <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1">
+                                                        @forelse(array_slice($previewData['strengths'] ?? [], 0, 3) as $txt) <li class="truncate">{{ $txt }}</li> @empty <li class="text-gray-500">記載なし</li> @endforelse
+                                                    </ul>
+                                                </div>
+                                                <div>
+                                                    <span class="font-bold text-red-500 mb-1 inline-block">W (弱み):</span>
+                                                    <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1">
+                                                        @forelse(array_slice($previewData['weaknesses'] ?? [], 0, 3) as $txt) <li class="truncate">{{ $txt }}</li> @empty <li class="text-gray-500">記載なし</li> @endforelse
+                                                    </ul>
+                                                </div>
+                                                <div>
+                                                    <span class="font-bold text-green-500 mb-1 inline-block">O (機会):</span>
+                                                    <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1">
+                                                        @forelse(array_slice($previewData['opportunities'] ?? [], 0, 3) as $txt) <li class="truncate">{{ $txt }}</li> @empty <li class="text-gray-500">記載なし</li> @endforelse
+                                                    </ul>
+                                                </div>
+                                                <div>
+                                                    <span class="font-bold text-yellow-500 mb-1 inline-block">T (脅威):</span>
+                                                    <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1">
+                                                        @forelse(array_slice($previewData['threats'] ?? [], 0, 3) as $txt) <li class="truncate">{{ $txt }}</li> @empty <li class="text-gray-500">記載なし</li> @endforelse
+                                                    </ul>
+                                                </div>
                                             </div>
                                         @endif
-
-                                        <div class="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-gray-50 dark:from-[#131314] to-transparent pointer-events-none"></div>
                                     </div>
 
-                                    <div class="mt-3 flex items-center justify-between">
+                                    <div class="flex items-center justify-between mt-auto">
                                         <button type="button" class="flex items-center space-x-1 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6.633 10.25c.806 0 1.533-.446 2.031-1.08a9.041 9.041 0 0 1 2.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 0 0 .322-1.672V2.75a.75.75 0 0 1 .75-.75 2.25 2.25 0 0 1 1.5.58c.36.31.6.76.68 1.25.04.24.06.49.06.75 0 .76-.23 1.48-.63 2.08-.2.31-.05.73.3.88l3.126.33a2.25 2.25 0 0 1 1.954 2.65l-1.42 6.75c-.24 1.14-1.28 1.96-2.45 1.96H13.5a5.5 5.5 0 0 1-2.5-.6l-3.11-1.42a4.5 4.5 0 0 0-1.43-.24H5.9c-.83 0-1.5-.67-1.5-1.5V11.75c0-.83.67-1.5 1.5-1.5h.733Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 10.25h1.5v9h-1.5v-9Z" /></svg>
                                             <span class="text-sm">0</span>
                                         </button>
-                                        
                                         <a href="{{ route('analyses.show', $analysis) }}" class="text-xs font-bold text-blue-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex items-center">
                                             図解を詳しく見る <span class="ml-1 text-[10px]">▶</span>
                                         </a>

@@ -91,6 +91,8 @@ Route::middleware('auth')->prefix('tools')->name('tools.')->group(function () {
     Route::post('/store', [AnalysisController::class, 'store'])->name('store');
 // 公開用のルート
     Route::post('/analyses/{analysis}/publish', [AnalysisController::class, 'publish'])->name('publish');
+// AIアシスタント用のルート
+    Route::post('/ai-assist', [AnalysisController::class, 'aiAssist'])->name('ai_assist');
 });
 
 // 分析・図解 (閲覧用)

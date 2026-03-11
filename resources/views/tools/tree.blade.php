@@ -53,8 +53,8 @@
                         </div>
                         
                         <div class="space-y-2 mb-3">
-                            <input type="url" class="w-full bg-transparent dark:bg-[#131314] border-b border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-200 text-sm py-2 focus:outline-none focus:border-blue-500 transition-colors placeholder-gray-400 dark:placeholder-gray-600" placeholder="元情報のURL (例: https://youtu.be/...)">
-                            <textarea oninput="autoResize(this)" class="w-full bg-transparent dark:bg-[#131314] border-b border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-200 text-sm py-2 focus:outline-none focus:border-blue-500 transition-colors placeholder-gray-400 dark:placeholder-gray-600" rows="1" placeholder="トピックの主題や元情報の概要を入力..."></textarea>
+                            <input type="url" id="info-url" class="w-full bg-transparent dark:bg-[#131314] border-b border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-200 text-sm py-2 focus:outline-none focus:border-blue-500 transition-colors placeholder-gray-400 dark:placeholder-gray-600" placeholder="元情報のURL (例: https://youtu.be/...)">
+                            <textarea id="info-desc" oninput="autoResize(this)" class="w-full bg-transparent dark:bg-[#131314] border-b border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-200 text-sm py-2 focus:outline-none focus:border-blue-500 transition-colors placeholder-gray-400 dark:placeholder-gray-600" rows="1" placeholder="トピックの主題や元情報の概要を入力..."></textarea>
                         </div>
                         
                         <button onclick="addNode(document.getElementById('root-replies'))" class="text-xs font-bold text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors flex items-center bg-gray-100 hover:bg-gray-200 dark:bg-gray-800/50 dark:hover:bg-gray-700 px-3 py-1.5 rounded-full w-fit border border-gray-200 dark:border-gray-700">
@@ -226,11 +226,12 @@
 
             if (!text) return;
 
+            // ユーザーのメッセージを画面に表示
             const userMsg = `
                 <div class="flex gap-3 flex-row-reverse">
-                    <div class="w-8 h-8 rounded-full bg-gray-500 dark:bg-gray-600 flex items-center justify-center shrink-0 shadow-md text-xs text-white">You</div>
+                    <div class="w-8 h-8 rounded-full bg-gray-500 dark:bg-gray-600 flex items-center justify-center shrink-0 shadow-md text-xs text-white font-bold">You</div>
                     <div class="flex flex-col items-end">
-                        ${target !== '指定なし' ? `<span class="text-[10px] text-gray-500 mb-1">Target: ${target}</span>` : ''}
+                        ${target !== '指定なし' ? `<span class="text-[10px] text-gray-500 mb-1 font-bold">Target: ${target}</span>` : ''}
                         <div class="bg-blue-600 p-3 rounded-lg rounded-tr-none text-sm text-white shadow-md max-w-[85%] whitespace-pre-wrap">${text}</div>
                     </div>
                 </div>
@@ -241,20 +242,77 @@
             inputEl.style.height = 'auto';
             chatHistory.scrollTop = chatHistory.scrollHeight;
 
-            setTimeout(() => {
-                const aiResponseText = `対象: 【${target}】\n指示: 「${text}」\n\n本番環境では、このようにツリーの構造と、あなたの指示をGeminiに送り、その結果をここに表示します。`;
+            // ローディング（思考中）アニメーションを表示
+            const loadingId = 'loading-' + Date.now();
+            const loadingMsg = `
+                <div id="${loadingId}" class="flex gap-3">
+                    <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center shrink-0 shadow-md">
+                        <svg class="h-4 w-4 text-white animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                    </div>
+                    <div class="bg-gray-100 dark:bg-[#131314] p-3 rounded-lg rounded-tl-none text-sm text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-800 font-bold">
+                        <span class="animate-pulse">AIが思考中...</span>
+                    </div>
+                </div>
+            `;
+            chatHistory.insertAdjacentHTML('beforeend', loadingMsg);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+
+            // 🌟 修正済：現在のツリー構造と事前情報を読み取ってAIに送る
+            const rootContainer = document.getElementById('root-replies');
+            const treeData = buildTreeData(rootContainer);
+            const urlInput = document.getElementById('info-url');
+            const descInput = document.getElementById('info-desc');
+            const url = urlInput ? urlInput.value.trim() : '';
+            const desc = descInput ? descInput.value.trim() : '';
+            
+            let contextText = "";
+            if (desc || url) contextText += `【事前情報】\n概要: ${desc}\nURL: ${url}\n\n`;
+            contextText += '【現在のツリー構造】\n' + JSON.stringify(treeData, null, 2);
+
+            // Laravelのバックエンド（AnalysisController@aiAssist）に送信
+            fetch('{{ route("tools.ai_assist") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    prompt: (target !== '指定なし' ? '対象: 【' + target + '】\n' : '') + text,
+                    context: contextText
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById(loadingId).remove();
+                
+                let replyText = data.reply || data.error || 'エラーが発生しました。';
+                replyText = replyText.replace(/\*\*(.*?)\*\*/g, '<span class="font-bold text-gray-900 dark:text-white">$1</span>');
 
                 const aiMsg = `
                     <div class="flex gap-3">
                         <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center shrink-0 shadow-md">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                            <svg class="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
                         </div>
-                        <div class="bg-gray-100 dark:bg-[#131314] p-3 rounded-lg rounded-tl-none text-sm text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-800 max-w-[85%] whitespace-pre-wrap leading-relaxed">${aiResponseText}</div>
+                        <div class="bg-gray-100 dark:bg-[#131314] p-3 rounded-lg rounded-tl-none text-sm text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-800 max-w-[85%] whitespace-pre-wrap leading-relaxed">${replyText}</div>
                     </div>
                 `;
                 chatHistory.insertAdjacentHTML('beforeend', aiMsg);
                 chatHistory.scrollTop = chatHistory.scrollHeight;
-            }, 800);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById(loadingId).remove();
+                const errorMsg = `
+                    <div class="flex gap-3">
+                        <div class="w-8 h-8 rounded-full bg-red-600 flex items-center justify-center shrink-0 shadow-md text-white font-bold">!</div>
+                        <div class="bg-red-50 dark:bg-red-900/30 p-3 rounded-lg rounded-tl-none text-sm text-red-800 dark:text-red-200 border border-red-200 dark:border-red-800">
+                            通信エラーが発生しました。
+                        </div>
+                    </div>
+                `;
+                chatHistory.insertAdjacentHTML('beforeend', errorMsg);
+                chatHistory.scrollTop = chatHistory.scrollHeight;
+            });
         }
 
         // ツリーの階層構造を読み取る再帰関数
@@ -285,23 +343,26 @@
             btn.innerHTML = '保存中...';
             btn.disabled = true;
 
-            // ツリーのルートからすべてのデータを読み取る
+            // 🌟 修正：事前情報（meta）とツリー構造（nodes）をセットにして保存
             const rootContainer = document.getElementById('root-replies');
             const treeData = buildTreeData(rootContainer);
+            const url = document.getElementById('info-url').value.trim();
+            const desc = document.getElementById('info-desc').value.trim();
             
-            // 分析のタイトル（とりあえず日時の自動生成にしておきます）
+            const payloadData = {
+                meta: { url: url, description: desc },
+                nodes: treeData
+            };
+
             const title = 'ロジックツリー (' + new Date().toLocaleDateString() + ')';
 
             fetch('{{ route("tools.store") }}', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                },
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
                 body: JSON.stringify({
                     title: title,
                     type: 'tree',
-                    data: treeData
+                    data: payloadData // まとめたデータを送る
                 })
             })
             .then(response => response.json())
