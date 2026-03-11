@@ -1,9 +1,14 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight flex items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
-            SWOT分析作成 (PRO)
-        </h2>
+        <div class="flex justify-between items-center w-full">
+            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+                SWOT分析作成 (PRO)
+            </h2>
+            <button onclick="saveSwot()" id="save-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-4 rounded text-sm transition-colors shadow-sm">
+                分析を保存する
+            </button>
+        </div>
     </x-slot>
 
     <div class="py-6">
@@ -114,6 +119,64 @@
                 btn.innerHTML = originalText;
                 btn.classList.remove('opacity-70', 'cursor-not-allowed');
             }, 1000);
+        }
+
+        // 🌟 リスト内のテキストを配列で取得する関数
+        function getListData(listId) {
+            const container = document.getElementById(listId);
+            const textareas = container.querySelectorAll('textarea');
+            const data = [];
+            textareas.forEach(ta => {
+                if (ta.value.trim() !== '') {
+                    data.push(ta.value.trim());
+                }
+            });
+            return data;
+        }
+
+        // 🌟 データベースに送信する処理
+        function saveSwot() {
+            const btn = document.getElementById('save-btn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '保存中...';
+            btn.disabled = true;
+
+            // テーマと4つの領域のデータを取得
+            const theme = document.getElementById('theme-input').value.trim() || '未設定のテーマ';
+            const swotData = {
+                theme: theme,
+                strengths: getListData('list-s'),
+                weaknesses: getListData('list-w'),
+                opportunities: getListData('list-o'),
+                threats: getListData('list-t')
+            };
+
+            const title = theme !== '未設定のテーマ' ? 'SWOT: ' + theme : 'SWOT分析 (' + new Date().toLocaleDateString() + ')';
+
+            fetch('{{ route("tools.store") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    title: title,
+                    type: 'swot',
+                    data: swotData
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('保存に失敗しました。');
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            });
         }
     </script>
 </x-app-layout>

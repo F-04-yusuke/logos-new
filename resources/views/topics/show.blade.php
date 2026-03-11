@@ -99,7 +99,8 @@
 
             <div x-data="{ 
                     activeTab: sessionStorage.getItem('activeTab_{{ $topic->id }}') || '{{ request()->has('comment_sort') ? 'comments' : 'info' }}',
-                    isModalOpen: false 
+                    isModalOpen: false,
+                    isAnalysisModalOpen: false 
                  }" 
                  x-init="$watch('activeTab', value => sessionStorage.setItem('activeTab_{{ $topic->id }}', value))" 
                  class="mt-4">
@@ -286,23 +287,99 @@
                 </div>
 
                 <div x-show="activeTab === 'analysis'" x-cloak>
+                    @php
+                        // このトピックに公開されている分析を取得
+                        $topicAnalyses = \App\Models\Analysis::where('topic_id', $topic->id)->where('is_published', true)->latest()->get();
+                        // 自分が作成した未公開（下書き）の分析を取得
+                        $myAvailableAnalyses = \App\Models\Analysis::where('user_id', auth()->id())->where('is_published', false)->latest()->get();
+                    @endphp
+
                     <div class="flex items-center justify-between mb-4">
-                        <h3 class="font-bold text-gray-900 dark:text-gray-100 text-sm sm:text-base">0件の分析・図解</h3>
-                        <button class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-1 px-3 sm:py-1.5 sm:px-4 rounded text-xs sm:text-sm transition-colors flex items-center shrink-0">
+                        <h3 class="font-bold text-gray-900 dark:text-gray-100 text-sm sm:text-base">{{ $topicAnalyses->count() }}件の分析・図解</h3>
+                        
+                        <button @click="isAnalysisModalOpen = true" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-1 px-3 sm:py-1.5 sm:px-4 rounded text-xs sm:text-sm transition-colors flex items-center shrink-0">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
                             <span class="hidden sm:inline">マイページから投稿</span>
                         </button>
                     </div>
 
-                    <div class="flex flex-col items-center justify-center py-12 px-4 border-2 border-dashed border-gray-300 dark:border-gray-800 rounded-lg bg-gray-50 dark:bg-[#131314]/50">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400 dark:text-gray-600 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                        </svg>
-                        <p class="text-sm text-gray-500 dark:text-gray-400 font-bold mb-1">まだ分析・図解は投稿されていません</p>
-                        <p class="text-xs text-gray-400 dark:text-gray-500 text-center max-w-sm">
-                            プレミアムプランに登録すると、マイページで作成した「ロジックツリー」や「総合評価表」をここに公開して、議論を深めることができます。
-                        </p>
-                    </div>
+                    @if($topicAnalyses->isEmpty())
+                        <div class="flex flex-col items-center justify-center py-12 px-4 border-2 border-dashed border-gray-300 dark:border-gray-800 rounded-lg bg-gray-50 dark:bg-[#131314]/50">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400 dark:text-gray-600 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                            </svg>
+                            <p class="text-sm text-gray-500 dark:text-gray-400 font-bold mb-1">まだ分析・図解は投稿されていません</p>
+                            <p class="text-xs text-gray-400 dark:text-gray-500 text-center max-w-sm">
+                                プレミアムプランに登録すると、マイページで作成した「ロジックツリー」や「総合評価表」をここに公開して、議論を深めることができます。
+                            </p>
+                        </div>
+                    @else
+                        <div class="space-y-3">
+                            @foreach($topicAnalyses as $analysis)
+                                <div class="p-4 bg-white dark:bg-[#1e1f20] rounded-lg border border-gray-200 dark:border-transparent shadow-sm transition-colors">
+                                    
+                                    <div class="flex justify-between items-center mb-2">
+                                        <div class="flex items-center gap-2">
+                                            <span class="font-bold text-sm text-gray-900 dark:text-gray-100">{{ $analysis->user->name }}</span>
+                                            @if($analysis->type === 'tree') <span class="text-[9px] font-bold bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-400 px-1.5 py-0.5 rounded">ロジックツリー</span>
+                                            @elseif($analysis->type === 'matrix') <span class="text-[9px] font-bold bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-400 px-1.5 py-0.5 rounded">総合評価表</span>
+                                            @elseif($analysis->type === 'swot') <span class="text-[9px] font-bold bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-400 px-1.5 py-0.5 rounded">SWOT分析</span>
+                                            @endif
+                                        </div>
+                                        <span class="text-xs text-gray-500">{{ $analysis->created_at->format('Y-m-d H:i') }}</span>
+                                    </div>
+
+                                    <h4 class="font-bold text-base text-gray-900 dark:text-gray-100 mb-2">{{ $analysis->title }}</h4>
+
+                                    <div class="relative max-h-40 overflow-hidden rounded-md border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#131314] p-3 text-xs">
+                                        
+                                        @php $previewData = $analysis->data; @endphp
+                                        
+                                        @if($analysis->type === 'tree' && !empty($previewData))
+                                            <div class="space-y-2 opacity-80">
+                                                @foreach(array_slice($previewData, 0, 3) as $node)
+                                                    <div class="flex gap-2"><span class="font-bold text-blue-500 shrink-0">{{ $node['speaker'] ?? '' }}:</span><span class="text-gray-700 dark:text-gray-300 truncate">{{ $node['text'] ?? '' }}</span></div>
+                                                    @if(!empty($node['children']))
+                                                        <div class="ml-4 flex gap-2 border-l-2 border-gray-300 dark:border-gray-700 pl-2"><span class="font-bold text-gray-500 shrink-0">↳ {{ $node['children'][0]['speaker'] ?? '' }}:</span><span class="text-gray-600 dark:text-gray-400 truncate">{{ $node['children'][0]['text'] ?? '' }}</span></div>
+                                                    @endif
+                                                @endforeach
+                                            </div>
+                                        @elseif($analysis->type === 'matrix' && isset($previewData['items']))
+                                            <div class="opacity-80">
+                                                <div class="font-bold text-gray-500 mb-1">【評価項目】</div>
+                                                <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1 ml-1">
+                                                    @foreach(array_slice($previewData['items'], 0, 4) as $item)
+                                                        <li class="truncate">{{ $item['itemTitle'] ?? '' }}</li>
+                                                    @endforeach
+                                                </ul>
+                                            </div>
+                                        @elseif($analysis->type === 'swot')
+                                            <div class="grid grid-cols-2 gap-2 opacity-80">
+                                                <div><span class="font-bold text-blue-500">S (強み):</span><br><span class="text-gray-700 dark:text-gray-300 truncate block">{{ $previewData['strengths'][0] ?? '記載なし' }}</span></div>
+                                                <div><span class="font-bold text-red-500">W (弱み):</span><br><span class="text-gray-700 dark:text-gray-300 truncate block">{{ $previewData['weaknesses'][0] ?? '記載なし' }}</span></div>
+                                                <div><span class="font-bold text-green-500">O (機会):</span><br><span class="text-gray-700 dark:text-gray-300 truncate block">{{ $previewData['opportunities'][0] ?? '記載なし' }}</span></div>
+                                                <div><span class="font-bold text-yellow-500">T (脅威):</span><br><span class="text-gray-700 dark:text-gray-300 truncate block">{{ $previewData['threats'][0] ?? '記載なし' }}</span></div>
+                                            </div>
+                                        @endif
+
+                                        <div class="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-gray-50 dark:from-[#131314] to-transparent pointer-events-none"></div>
+                                    </div>
+
+                                    <div class="mt-3 flex items-center justify-between">
+                                        <button type="button" class="flex items-center space-x-1 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6.633 10.25c.806 0 1.533-.446 2.031-1.08a9.041 9.041 0 0 1 2.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 0 0 .322-1.672V2.75a.75.75 0 0 1 .75-.75 2.25 2.25 0 0 1 1.5.58c.36.31.6.76.68 1.25.04.24.06.49.06.75 0 .76-.23 1.48-.63 2.08-.2.31-.05.73.3.88l3.126.33a2.25 2.25 0 0 1 1.954 2.65l-1.42 6.75c-.24 1.14-1.28 1.96-2.45 1.96H13.5a5.5 5.5 0 0 1-2.5-.6l-3.11-1.42a4.5 4.5 0 0 0-1.43-.24H5.9c-.83 0-1.5-.67-1.5-1.5V11.75c0-.83.67-1.5 1.5-1.5h.733Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 10.25h1.5v9h-1.5v-9Z" /></svg>
+                                            <span class="text-sm">0</span>
+                                        </button>
+                                        
+                                        <a href="{{ route('analyses.show', $analysis) }}" class="text-xs font-bold text-blue-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex items-center">
+                                            図解を詳しく見る <span class="ml-1 text-[10px]">▶</span>
+                                        </a>
+                                    </div>
+
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
                 </div>
 
                 <div x-show="isModalOpen" x-cloak class="relative z-50" aria-labelledby="modal-title" role="dialog" aria-modal="true">
@@ -342,6 +419,60 @@
                                 <div class="px-4 py-3 sm:px-6 sm:py-4 border-t border-gray-200 dark:border-gray-800 flex justify-end gap-3 bg-gray-50 dark:bg-[#1e1f20]">
                                     <button @click="isModalOpen = false" type="button" class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 font-bold py-2 px-4 rounded-md text-sm transition-colors">キャンセル</button>
                                     <button type="submit" form="post-form" class="bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 text-white font-bold py-2 px-6 rounded-md text-sm transition-colors">投稿する</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div x-show="isAnalysisModalOpen" x-cloak class="relative z-50" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+                    <div x-show="isAnalysisModalOpen" x-transition.opacity class="fixed inset-0 bg-black/60 dark:bg-black/80 transition-opacity"></div>
+                    <div class="fixed inset-0 z-10 overflow-y-auto">
+                        <div class="flex min-h-full items-end justify-center p-0 sm:items-center sm:p-4">
+                            <div x-show="isAnalysisModalOpen" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-full sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-full sm:translate-y-0 sm:scale-95" @click.away="isAnalysisModalOpen = false" class="relative transform overflow-hidden bg-white dark:bg-[#18191a] rounded-t-2xl sm:rounded-xl border-t sm:border border-gray-200 dark:border-gray-800 text-left shadow-2xl transition-all w-full h-[85vh] sm:h-auto sm:max-w-xl flex flex-col">
+                                
+                                <div class="px-4 py-3 sm:px-6 sm:py-4 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-[#1e1f20]">
+                                    <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 flex items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                                        マイページから投稿
+                                    </h3>
+                                    <button @click="isAnalysisModalOpen = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none transition-colors"><span class="text-2xl leading-none">&times;</span></button>
+                                </div>
+
+                                <div class="p-4 sm:p-6 overflow-y-auto flex-1 bg-white dark:bg-[#131314]">
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 mb-4">保存済みで、まだ他のトピックに公開していない分析・図解の一覧です。</p>
+                                    
+                                    @if(isset($myAvailableAnalyses) && $myAvailableAnalyses->isEmpty())
+                                        <div class="text-center py-6 border border-gray-200 dark:border-gray-800 rounded-lg">
+                                            <p class="text-sm text-gray-500 mb-2">公開できる分析・図解がありません。</p>
+                                            <a href="{{ route('tools.tree') }}" class="text-xs text-blue-500 hover:underline">ツールを使って新しく作成する</a>
+                                        </div>
+                                    @else
+                                        <div class="space-y-3">
+                                            @foreach($myAvailableAnalyses as $analysis)
+                                                <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-3 bg-gray-50 dark:bg-[#1e1f20] flex justify-between items-center">
+                                                    <div>
+                                                        <div class="mb-1">
+                                                            @if($analysis->type === 'tree') <span class="text-[10px] bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-400 px-1.5 py-0.5 rounded">ロジックツリー</span>
+                                                            @elseif($analysis->type === 'matrix') <span class="text-[10px] bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-400 px-1.5 py-0.5 rounded">総合評価表</span>
+                                                            @elseif($analysis->type === 'swot') <span class="text-[10px] bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-400 px-1.5 py-0.5 rounded">SWOT分析</span>
+                                                            @endif
+                                                        </div>
+                                                        <h4 class="text-sm font-bold text-gray-900 dark:text-gray-100">{{ $analysis->title }}</h4>
+                                                        <span class="text-[10px] text-gray-400">作成日: {{ $analysis->created_at->format('Y-m-d') }}</span>
+                                                    </div>
+                                                    
+                                                    <form method="POST" action="{{ route('tools.publish', $analysis) }}">
+                                                        @csrf
+                                                        <input type="hidden" name="topic_id" value="{{ $topic->id }}">
+                                                        <button type="submit" class="bg-yellow-500 hover:bg-yellow-600 text-white text-xs font-bold py-1.5 px-3 rounded shadow-sm transition-colors">
+                                                            このトピックに投稿
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    @endif
                                 </div>
                             </div>
                         </div>

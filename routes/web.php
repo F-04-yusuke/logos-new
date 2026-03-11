@@ -87,9 +87,15 @@ Route::middleware('auth')->prefix('tools')->name('tools.')->group(function () {
     Route::get('/tree', function () { return view('tools.tree'); })->name('tree');
     Route::get('/matrix', function () { return view('tools.matrix'); })->name('matrix');
     Route::get('/swot', function () { return view('tools.swot'); })->name('swot');
-
 // 保存用のPOSTルート
     Route::post('/store', [AnalysisController::class, 'store'])->name('store');
+// 公開用のルート
+    Route::post('/analyses/{analysis}/publish', [AnalysisController::class, 'publish'])->name('publish');
+});
+
+// 分析・図解 (閲覧用)
+Route::middleware('auth')->group(function () {
+    Route::get('/analyses/{analysis}', [App\Http\Controllers\AnalysisController::class, 'show'])->name('analyses.show');
 });
 
 require __DIR__.'/auth.php';

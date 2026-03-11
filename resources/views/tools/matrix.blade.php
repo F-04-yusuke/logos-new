@@ -1,9 +1,14 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight flex items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-            総合評価表作成 (PRO)
-        </h2>
+        <div class="flex justify-between items-center w-full">
+            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                総合評価表作成 (PRO)
+            </h2>
+            <button onclick="saveMatrix()" id="save-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-4 rounded text-sm transition-colors shadow-sm">
+                評価表を保存する
+            </button>
+        </div>
     </x-slot>
 
     <div class="py-6">
@@ -208,6 +213,76 @@
                 chatHistory.insertAdjacentHTML('beforeend', `<div class="flex gap-3"><div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center shrink-0 shadow-md"><svg class="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg></div><div class="bg-gray-100 dark:bg-[#131314] p-3 rounded-lg rounded-tl-none text-sm text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-800 max-w-[85%] whitespace-pre-wrap leading-relaxed">指示: 「${text}」\n本番環境ではここに提案が返ります。</div></div>`);
                 chatHistory.scrollTop = chatHistory.scrollHeight;
             }, 800);
+        }
+
+        // 表のデータをJSON化する関数
+        function buildMatrixData() {
+            const data = { patterns: [], items: [] };
+            
+            // パターン（列）の取得
+            const headerRow = document.getElementById('header-row');
+            const patternCols = headerRow.querySelectorAll('.col-pattern');
+            patternCols.forEach(col => {
+                const title = col.querySelector('input').value;
+                const description = col.querySelector('textarea').value;
+                data.patterns.push({ title, description });
+            });
+
+            // 評価項目（行）と各セルのスコア取得
+            const bodyRows = document.querySelectorAll('.row-item');
+            bodyRows.forEach(row => {
+                const itemTitle = row.querySelector('input').value;
+                const scores = [];
+                
+                // 1列目は項目名なので、2列目（インデックス1）からループ
+                for (let i = 1; i <= data.patterns.length; i++) {
+                    const cell = row.children[i];
+                    if (cell) {
+                        const score = cell.querySelector('select').value;
+                        const reason = cell.querySelector('textarea').value;
+                        scores.push({ score, reason });
+                    }
+                }
+                data.items.push({ itemTitle, scores });
+            });
+
+            return data;
+        }
+
+        // データベースに送信する処理
+        function saveMatrix() {
+            const btn = document.getElementById('save-btn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '保存中...';
+            btn.disabled = true;
+
+            const matrixData = buildMatrixData();
+            const title = '総合評価表 (' + new Date().toLocaleDateString() + ')';
+
+            fetch('{{ route("tools.store") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    title: title,
+                    type: 'matrix',
+                    data: matrixData
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('保存に失敗しました。');
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            });
         }
     </script>
 </x-app-layout>
