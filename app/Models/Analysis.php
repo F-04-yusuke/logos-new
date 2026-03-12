@@ -34,4 +34,17 @@ class Analysis extends Model
     {
         return $this->belongsTo(Topic::class);
     }
+
+    // この分析についた「いいね（ユーザー）」を取得する
+    public function likes()
+    {
+        return $this->belongsToMany(User::class, 'analysis_likes')->withTimestamps();
+    }
+
+    // 特定のユーザー（自分）がすでに「いいね」しているか判定する
+    public function isLikedBy($user)
+    {
+        if (!$user) return false;
+        return $this->likes()->where('user_id', $user->id)->exists();
+    }
 }

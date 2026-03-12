@@ -1,11 +1,4 @@
 <x-app-layout>
-    @php
-        // このトピックに公開されている分析を取得
-        $topicAnalyses = \App\Models\Analysis::where('topic_id', $topic->id)->where('is_published', true)->latest()->get();
-        // 自分が作成した未公開（下書き）の分析を取得
-        $myAvailableAnalyses = \App\Models\Analysis::where('user_id', auth()->id())->where('is_published', false)->latest()->get();
-    @endphp
-
     <div class="w-full">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 text-gray-900 dark:text-gray-100">
             
@@ -27,40 +20,40 @@
                     
                     <p class="whitespace-pre-wrap text-sm text-gray-700 dark:text-gray-300 mb-3">{{ $topic->content }}</p>
 
-                    <div x-data="{ timelineExpanded: false }" class="mt-1">
-                        <h3 class="text-[11px] font-bold text-gray-500 dark:text-gray-400 mb-1.5 flex items-center">
+                    <div x-data="{ timelineExpanded: false }" class="mt-1 mb-1">
+                        <h3 class="text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5 flex items-center">
                             <span class="mr-1">⏳</span> 前提となる時系列
                         </h3>
                         
-                        <div class="border-l-[1.5px] border-gray-300 dark:border-gray-700 ml-1.5 pl-3 space-y-1">
-                            <div class="relative flex items-start sm:items-center py-0.5">
-                                <div class="absolute left-[-16.5px] top-1.5 sm:top-1/2 sm:-translate-y-1/2 w-1.5 h-1.5 bg-blue-500 rounded-full shadow-[0_0_4px_rgba(59,130,246,0.5)]"></div>
-                                <div class="w-16 sm:w-20 font-bold text-blue-500 dark:text-blue-400 text-[11px] shrink-0 pt-0.5 sm:pt-0">2014年2月</div>
-                                <div class="flex-1 text-gray-700 dark:text-gray-200 text-[11px] font-bold ml-1 leading-snug sm:truncate">マイダン革命（親露政権崩壊）</div>
-                                <span class="ml-2 text-[8px] bg-gray-100 dark:bg-[#1e1f20] text-gray-400 px-1 py-0.5 rounded whitespace-nowrap shrink-0 border border-gray-200 dark:border-gray-800">AI生成</span>
+                        <div class="border-l-[1.5px] border-gray-300 dark:border-gray-700 ml-1.5 pl-3">
+                            <div class="relative flex items-start sm:items-center">
+                                <div class="absolute left-[-16.5px] top-2 sm:top-1/2 sm:-translate-y-1/2 w-1.5 h-1.5 bg-blue-500 rounded-full shadow-[0_0_4px_rgba(59,130,246,0.5)]"></div>
+                                <div class="w-20 sm:w-24 text-sm text-gray-700 dark:text-gray-300 shrink-0">2014年2月</div>
+                                <div class="flex-1 text-sm text-gray-700 dark:text-gray-300 sm:truncate">マイダン革命（親露政権崩壊）</div>
+                                <span class="ml-2 text-[10px] bg-gray-100 dark:bg-[#1e1f20] text-gray-400 px-1 py-0.5 rounded whitespace-nowrap shrink-0 border border-gray-200 dark:border-gray-800">AI生成</span>
                             </div>
-                            <div class="relative flex items-start sm:items-center py-0.5">
-                                <div class="absolute left-[-16.5px] top-1.5 sm:top-1/2 sm:-translate-y-1/2 w-1.5 h-1.5 bg-blue-500 rounded-full shadow-[0_0_4px_rgba(59,130,246,0.5)]"></div>
-                                <div class="w-16 sm:w-20 font-bold text-blue-500 dark:text-blue-400 text-[11px] shrink-0 pt-0.5 sm:pt-0">2014年3月</div>
-                                <div class="flex-1 text-gray-700 dark:text-gray-200 text-[11px] font-bold ml-1 leading-snug sm:truncate">ロシアによるクリミア併合</div>
-                                <span class="ml-2 text-[8px] bg-gray-100 dark:bg-[#1e1f20] text-gray-400 px-1 py-0.5 rounded whitespace-nowrap shrink-0 border border-gray-200 dark:border-gray-800">AI生成</span>
+                            <div class="relative flex items-start sm:items-center">
+                                <div class="absolute left-[-16.5px] top-2 sm:top-1/2 sm:-translate-y-1/2 w-1.5 h-1.5 bg-blue-500 rounded-full shadow-[0_0_4px_rgba(59,130,246,0.5)]"></div>
+                                <div class="w-20 sm:w-24 text-sm text-gray-700 dark:text-gray-300 shrink-0">2014年3月</div>
+                                <div class="flex-1 text-sm text-gray-700 dark:text-gray-300 sm:truncate">ロシアによるクリミア併合</div>
+                                <span class="ml-2 text-[10px] bg-gray-100 dark:bg-[#1e1f20] text-gray-400 px-1 py-0.5 rounded whitespace-nowrap shrink-0 border border-gray-200 dark:border-gray-800">AI生成</span>
                             </div>
-                            <div class="relative flex items-start sm:items-center py-0.5">
-                                <div class="absolute left-[-16.5px] top-1.5 sm:top-1/2 sm:-translate-y-1/2 w-1.5 h-1.5 bg-gray-400 dark:bg-gray-500 rounded-full"></div>
-                                <div class="w-16 sm:w-20 font-bold text-blue-500 dark:text-blue-400 text-[11px] shrink-0 pt-0.5 sm:pt-0">2014年9月</div>
-                                <div class="flex-1 text-gray-700 dark:text-gray-200 text-[11px] font-bold ml-1 leading-snug sm:truncate">ミンスク合意（東部紛争停戦・後に破綻）</div>
+                            <div class="relative flex items-start sm:items-center">
+                                <div class="absolute left-[-16.5px] top-2 sm:top-1/2 sm:-translate-y-1/2 w-1.5 h-1.5 bg-gray-400 dark:bg-gray-500 rounded-full"></div>
+                                <div class="w-20 sm:w-24 text-sm text-gray-700 dark:text-gray-300 shrink-0">2014年9月</div>
+                                <div class="flex-1 text-sm text-gray-700 dark:text-gray-300 sm:truncate">ミンスク合意（東部紛争停戦・後に破綻）</div>
                             </div>
 
-                            <div x-show="timelineExpanded" x-collapse class="space-y-1 pt-1">
-                                <div class="relative flex items-start sm:items-center py-0.5">
-                                    <div class="absolute left-[-16.5px] top-1.5 sm:top-1/2 sm:-translate-y-1/2 w-1.5 h-1.5 bg-blue-500 rounded-full shadow-[0_0_4px_rgba(59,130,246,0.5)]"></div>
-                                    <div class="w-16 sm:w-20 font-bold text-blue-500 dark:text-blue-400 text-[11px] shrink-0 pt-0.5 sm:pt-0">2021年秋</div>
-                                    <div class="flex-1 text-gray-700 dark:text-gray-200 text-[11px] font-bold ml-1 leading-snug sm:truncate">ロシア軍がウクライナ国境に集結開始</div>
-                                    <span class="ml-2 text-[8px] bg-gray-100 dark:bg-[#1e1f20] text-gray-400 px-1 py-0.5 rounded whitespace-nowrap shrink-0 border border-gray-200 dark:border-gray-800">AI生成</span>
+                            <div x-show="timelineExpanded" x-collapse>
+                                <div class="relative flex items-start sm:items-center">
+                                    <div class="absolute left-[-16.5px] top-2 sm:top-1/2 sm:-translate-y-1/2 w-1.5 h-1.5 bg-blue-500 rounded-full shadow-[0_0_4px_rgba(59,130,246,0.5)]"></div>
+                                    <div class="w-20 sm:w-24 text-sm text-gray-700 dark:text-gray-300 shrink-0">2021年秋</div>
+                                    <div class="flex-1 text-sm text-gray-700 dark:text-gray-300 sm:truncate">ロシア軍がウクライナ国境に集結開始</div>
+                                    <span class="ml-2 text-[10px] bg-gray-100 dark:bg-[#1e1f20] text-gray-400 px-1 py-0.5 rounded whitespace-nowrap shrink-0 border border-gray-200 dark:border-gray-800">AI生成</span>
                                 </div>
                             </div>
                         </div>
-                        <button @click="timelineExpanded = !timelineExpanded" class="mt-1 ml-3 text-[10px] font-bold text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+                        <button @click="timelineExpanded = !timelineExpanded" class="mt-1 ml-3 text-xs font-bold text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
                             <span x-text="timelineExpanded ? '▲ 閉じる' : '▼ もっと見る'"></span>
                         </button>
                     </div>
@@ -110,7 +103,7 @@
                     isAnalysisModalOpen: false 
                  }" 
                  x-init="$watch('activeTab', value => sessionStorage.setItem('activeTab_{{ $topic->id }}', value))" 
-                 class="mt-4">
+                 class="mt-1">
                 
                 <div class="flex border-b border-gray-300 dark:border-gray-800 mb-3 overflow-x-auto">
                     <button @click="activeTab = 'info'" 
@@ -131,7 +124,7 @@
                     </button>
                 </div>
 
-                <div class="mt-6">
+                <div class="mt-4">
                         
                     <div x-show="activeTab === 'info'" x-cloak>
                         @include('topics.partials.info-tab')

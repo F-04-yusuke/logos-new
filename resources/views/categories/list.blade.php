@@ -16,10 +16,10 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 @foreach ($categories as $parent)
-                    <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow duration-200">
+                    <div class="bg-white dark:bg-[#1e1f20] shadow-sm sm:rounded-lg border border-gray-200 dark:border-gray-800 hover:shadow-md transition-shadow duration-200">
                         <div class="p-6">
                             
-                            <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 border-b border-gray-100 dark:border-gray-700 pb-3 flex items-center">
+                            <h3 class="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 border-b border-gray-100 dark:border-gray-800 pb-3 flex items-center">
                                 <span class="text-2xl mr-2">📁</span>
                                 <a href="{{ route('topics.index', ['category' => $parent->id]) }}" class="hover:text-blue-500 transition-colors">
                                     {{ $parent->name }}
@@ -38,7 +38,7 @@
                                     @endforeach
                                 </ul>
                             @else
-                                <p class="text-sm text-gray-400 italic pl-2">中分類はありません</p>
+                                <p class="text-sm text-gray-500 italic pl-2">中分類はありません</p>
                             @endif
 
                         </div>
@@ -47,7 +47,7 @@
             </div>
 
             @if($categories->isEmpty())
-                <div class="p-6 bg-white dark:bg-gray-800 rounded-lg shadow text-center text-gray-500 dark:text-gray-400">
+                <div class="p-6 bg-white dark:bg-[#1e1f20] rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm text-center text-gray-500 dark:text-gray-400">
                     現在、登録されているカテゴリはありません。
                 </div>
             @endif

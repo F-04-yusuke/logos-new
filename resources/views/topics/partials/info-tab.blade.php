@@ -61,14 +61,13 @@
             </div>
             <div class="mt-3 flex items-center justify-end gap-3">
                 @if ($post->user_id === auth()->id())
-                <a href="{{ route('posts.edit', $post) }}" class="text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">編集</a>
-                <form method="POST" action="{{ route('posts.destroy', $post) }}" onsubmit="return confirm('本当に削除しますか？');">
+                <form method="POST" action="{{ route('posts.destroy', $post) }}" onsubmit="return confirm('本当に削除しますか？');" class="m-0 p-0">
                     @csrf @method('DELETE')
                     <button type="submit" class="text-xs text-red-400 hover:text-red-600 transition-colors">削除</button>
                 </form>
                 <span class="text-gray-300 dark:text-gray-700">|</span>
                 @endif
-                <form method="POST" action="{{ route('likes.store', $post) }}">
+                <form method="POST" action="{{ route('likes.store', $post) }}" class="m-0 p-0">
                     @csrf
                     <button type="submit" class="flex items-center space-x-1 transition-colors duration-200 {{ $post->isLikedBy(auth()->user()) ? 'text-gray-900 dark:text-white font-bold' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300' }}">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="{{ $post->isLikedBy(auth()->user()) ? 'currentColor' : 'none' }}" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">

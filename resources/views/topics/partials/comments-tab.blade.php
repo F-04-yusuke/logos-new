@@ -15,40 +15,11 @@
 <div class="p-4 bg-gray-50 dark:bg-[#1e1f20] rounded-lg border border-gray-200 dark:border-transparent mb-6">
     <form method="POST" action="{{ route('comments.store', $topic) }}">
         @csrf
-        <textarea name="body" rows="3" class="w-full rounded-md border-gray-300 dark:bg-[#131314] dark:border-gray-700 dark:text-white mb-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500" required placeholder="このトピックに対する見解を投稿（※1人1件まで・編集は3回まで）"></textarea>
+        <textarea name="body" rows="3" class="w-full rounded-md border-gray-300 dark:bg-[#131314] dark:border-gray-700 dark:text-white mb-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500" required placeholder="このトピックに対するコメント（※1人1件まで）"></textarea>
         <div class="flex justify-end">
-            <button type="submit" class="bg-gray-800 hover:bg-gray-900 dark:bg-[#131314] dark:text-gray-200 border dark:border-gray-700 dark:hover:bg-gray-800 text-white font-bold py-1.5 px-4 rounded text-sm transition-colors">見解を投稿する</button>
+            <button type="submit" class="bg-gray-800 hover:bg-gray-900 dark:bg-[#131314] dark:text-gray-200 border border-transparent dark:border-gray-700 dark:hover:bg-gray-800 text-white font-bold py-1.5 px-4 rounded text-sm transition-colors shadow-sm">コメントする</button>
         </div>
     </form>
-</div>
-@else
-<div x-data="{ editing: false }" class="p-4 bg-gray-100 dark:bg-[#1e1f20] border border-gray-200 dark:border-transparent rounded-lg mb-6">
-    <div x-show="!editing">
-        <div class="flex justify-between items-center mb-2">
-            <p class="text-xs font-bold text-gray-700 dark:text-gray-300">✅ あなたの投稿</p>
-            <span class="text-xs text-gray-500">残り編集: {{ 3 - $userComment->edit_count }}回</span>
-        </div>
-        <p class="text-gray-900 dark:text-gray-100 whitespace-pre-wrap text-sm mb-3">{{ $userComment->body }}</p>
-        <div class="flex justify-end space-x-4 items-center">
-            <form method="POST" action="{{ route('comments.destroy', $userComment) }}" onsubmit="return confirm('本当に削除しますか？\n※削除すると新しく1件投稿できるようになります。');">
-                @csrf @method('DELETE')
-                <button type="submit" class="text-xs text-gray-500 hover:text-red-400 transition-colors">削除する</button>
-            </form>
-            @if($userComment->edit_count < 3)
-                <button @click="editing = true" class="text-xs font-bold text-gray-700 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 transition-colors">編集する</button>
-                @endif
-        </div>
-    </div>
-    <div x-show="editing" x-cloak>
-        <form method="POST" action="{{ route('comments.update', $userComment) }}">
-            @csrf @method('PATCH')
-            <textarea name="body" rows="3" class="w-full rounded-md border-gray-300 dark:bg-[#131314] dark:border-gray-700 dark:text-white mb-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500" required>{{ $userComment->body }}</textarea>
-            <div class="flex justify-end space-x-2">
-                <button type="button" @click="editing = false" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 px-3 py-1 text-xs transition-colors">キャンセル</button>
-                <button type="submit" class="bg-gray-800 hover:bg-gray-900 dark:bg-[#131314] dark:text-gray-200 border dark:border-gray-700 dark:hover:bg-gray-800 text-white font-bold py-1 px-3 rounded text-xs transition-colors">更新する</button>
-            </div>
-        </form>
-    </div>
 </div>
 @endif
 
@@ -56,12 +27,27 @@
     @forelse($comments as $comment)
     <div class="p-4 bg-white dark:bg-[#1e1f20] rounded-lg border border-gray-200 dark:border-transparent shadow-sm">
         <div class="flex justify-between items-center mb-2">
-            <span class="font-bold text-sm text-gray-900 dark:text-gray-100">{{ $comment->user->name }}</span>
-            <span class="text-xs text-gray-500">{{ $comment->created_at->diffForHumans() }} @if($comment->edit_count > 0)<span class="ml-1 text-gray-400">(編集済)</span>@endif</span>
+            <span class="font-bold text-sm text-gray-900 dark:text-gray-100 flex items-center">
+                {{ $comment->user->name }}
+                @if($comment->user_id === auth()->id())
+                    <span class="ml-2 text-[10px] bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 px-1.5 py-0.5 rounded font-normal">✅ あなたの投稿</span>
+                @endif
+            </span>
+            <span class="text-xs text-gray-500">{{ $comment->created_at->diffForHumans() }}</span>
         </div>
+        
         <p class="text-gray-800 dark:text-gray-300 text-sm whitespace-pre-wrap">{{ $comment->body }}</p>
-        <div class="mt-3 flex items-center justify-end">
-            <form method="POST" action="{{ route('comments.like', $comment) }}">
+        
+        <div class="mt-3 flex items-center justify-end gap-3">
+            @if ($comment->user_id === auth()->id())
+                <form method="POST" action="{{ route('comments.destroy', $comment) }}" onsubmit="return confirm('本当に削除しますか？\n※削除すると新しく1件投稿できるようになります。');" class="m-0 p-0">
+                    @csrf @method('DELETE')
+                    <button type="submit" class="text-xs text-red-400 hover:text-red-600 transition-colors">削除</button>
+                </form>
+                <span class="text-gray-300 dark:text-gray-700">|</span>
+            @endif
+
+            <form method="POST" action="{{ route('comments.like', $comment) }}" class="m-0 p-0">
                 @csrf
                 <button type="submit" class="flex items-center space-x-1 transition-colors duration-200 {{ $comment->isLikedBy(auth()->user()) ? 'text-gray-900 dark:text-white font-bold' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300' }}">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="{{ $comment->isLikedBy(auth()->user()) ? 'currentColor' : 'none' }}" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">

@@ -14,22 +14,22 @@ return new class extends Migration
         Schema::create('analyses', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            
+
             // どのトピックに対する分析か（後から紐付けられるように nullable にしておきます）
             $table->foreignId('topic_id')->nullable()->constrained()->cascadeOnDelete();
-            
+
             // 分析のタイトル（例：「日本の原発再稼働について」など）
             $table->string('title');
-            
+
             // ツールの種類 ('tree', 'matrix', 'swot' のいずれかが入る)
             $table->string('type');
-            
+
             // 🔥 ここが魔法のJSONカラム。複雑な図解のデータを丸ごと保存します。
             $table->json('data');
-            
+
             // トピックの「分析・図解 PRO」タブに公開（投稿）されているかどうか
             $table->boolean('is_published')->default(false);
-            
+
             $table->timestamps();
         });
     }

@@ -39,17 +39,37 @@ class LikeController extends Controller
         return back();
     }
 
-    // いいねしたエビデンス一覧画面を表示する処理
+    // 🔽 マイページの「参考になった一覧」画面を表示する処理
     public function index()
     {
+        $user_id = auth()->id();
+
+        // 【1. いいねした情報（Post）の取得】
         // 自分がいいねした投稿を、トピック情報・投稿者情報・全体のいいね数と一緒に取得する
         $likedPosts = auth()->user()->likedPosts()
             ->with(['topic', 'user']) // 関連データをまとめて取得
             ->withCount('likes')      // 🌟 最新のいいね数を計算して「likes_count」として取得
             ->latest()                // 新しい順に並べる
             ->get();
-        
-        return view('likes.index', compact('likedPosts'));
-    }
+            
+        // 【2. いいねしたコメント（Comment）の取得】
+        // comment_likesテーブル（いいねの記録）と commentsテーブル（コメント本体）をくっつけて、
+        // 自分がいいねしたコメントだけを引っ張り出してきます
+        $likedComments = \App\Models\Comment::select('comments.*')
+            ->join('comment_likes', 'comments.id', '=', 'comment_likes.comment_id')
+            ->where('comment_likes.user_id', $user_id)
+            ->with(['topic', 'user'])->withCount('likes')
+            ->orderBy('comment_likes.created_at', 'desc')->get(); // いいねした日時が新しい順
 
+        // 【3. いいねした分析・図解（Analysis）の取得】
+        // analysis_likesテーブルと analysesテーブルをくっつけて取得します
+        $likedAnalyses = \App\Models\Analysis::select('analyses.*')
+            ->join('analysis_likes', 'analyses.id', '=', 'analysis_likes.analysis_id')
+            ->where('analysis_likes.user_id', $user_id)
+            ->with(['topic', 'user'])->withCount('likes')
+            ->orderBy('analysis_likes.created_at', 'desc')->get();
+
+        // 取得した3種類のデータを、画面（likes/index.blade.php）に荷物として渡します
+        return view('likes.index', compact('likedPosts', 'likedComments', 'likedAnalyses'));
+    }
 }

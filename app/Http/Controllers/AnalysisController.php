@@ -85,7 +85,7 @@ class AnalysisController extends Controller
                     . "【現在の状況・データ】\n" . $request->context . "\n\n"
                     . "【指示】\n" . $request->prompt;
 
-        // 🌟 修正：リストに確実に存在していた「gemini-2.5-flash」を使用します！
+        // リストに確実に存在していた「gemini-2.5-flash」を使用します！
         $response = Http::withHeaders([
             'Content-Type' => 'application/json',
         ])->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={$apiKey}", [
@@ -107,5 +107,34 @@ class AnalysisController extends Controller
         // エラー時の詳細表示
         $errorBody = $response->body();
         return response()->json(['error' => "APIエラー詳細: " . $errorBody], 500);
+    }
+
+    // 他人のデータを勝手に消せないようにする
+    public function destroy(\App\Models\Analysis $analysis)
+    {
+        // セキュリティ：自分の分析データでなければ403エラーを返す
+        if ($analysis->user_id !== auth()->id()) {
+            abort(403, '権限がありません。');
+        }
+
+        $analysis->delete();
+
+        return back()->with('status', '分析・図解を削除しました。');
+    }
+
+    // いいねの切り替え（追加・削除）処理
+    public function toggleLike(\App\Models\Analysis $analysis)
+    {
+        $user = auth()->user();
+
+        if ($analysis->isLikedBy($user)) {
+            // すでにいいねしていれば解除
+            $analysis->likes()->detach($user->id);
+        } else {
+            // まだなら、いいねを登録
+            $analysis->likes()->attach($user->id);
+        }
+
+        return back(); // 元の画面に戻る
     }
 }

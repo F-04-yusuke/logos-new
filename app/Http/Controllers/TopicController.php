@@ -191,8 +191,31 @@ class TopicController extends Controller
             $userComment = $topic->comments()->where('user_id', auth()->id())->first();
         }
 
-        // ⑤ 画面に渡す（🌟 荷物リストに comments と userComment を追加！）
-        return view('topics.show', compact('topic', 'posts', 'comments', 'userComment'));
+        // 🌟 新機能：分析・図解タブ用のデータを取得し、並び替える
+        $analysisQuery = \App\Models\Analysis::where('topic_id', $topic->id)->where('is_published', true)->with('user')->withCount('likes');
+        
+        if ($request->filled('analysis_sort')) {
+            if ($request->analysis_sort === 'oldest') {
+                $analysisQuery->oldest();
+            } elseif ($request->analysis_sort === 'newest') {
+                $analysisQuery->latest();
+            } else {
+                $analysisQuery->orderBy('likes_count', 'desc')->latest();
+            }
+        } else {
+            // デフォルトは人気順
+            $analysisQuery->orderBy('likes_count', 'desc')->latest();
+        }
+        $topicAnalyses = $analysisQuery->get();
+
+        // 自分が作成した未公開（下書き）の分析を取得（モーダル表示用）
+        $myAvailableAnalyses = collect();
+        if (auth()->check()) {
+            $myAvailableAnalyses = \App\Models\Analysis::where('user_id', auth()->id())->where('is_published', false)->latest()->get();
+        }
+
+        // ⑤ 画面に渡す（🌟 荷物リストに comments, userComment, topicAnalyses, myAvailableAnalyses を追加！）
+        return view('topics.show', compact('topic', 'posts', 'comments', 'userComment', 'topicAnalyses', 'myAvailableAnalyses'));
     }
 
     // 編集画面（View）を表示する処理（edit）

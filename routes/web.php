@@ -99,6 +99,11 @@ Route::middleware('auth')->prefix('tools')->name('tools.')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::get('/analyses/{analysis}', [App\Http\Controllers\AnalysisController::class, 'show'])->name('analyses.show');
 });
+// 分析・図解の削除ルート
+Route::delete('/analyses/{analysis}', [\App\Http\Controllers\AnalysisController::class, 'destroy'])->name('analyses.destroy');
+
+// 分析・図解のいいねルート
+Route::post('/analyses/{analysis}/like', [\App\Http\Controllers\AnalysisController::class, 'toggleLike'])->name('analyses.like')->middleware('auth');
 
 require __DIR__.'/auth.php';
 

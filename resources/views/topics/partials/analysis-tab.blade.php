@@ -1,5 +1,17 @@
 <div class="flex items-center justify-between mb-4">
-    <h3 class="font-bold text-gray-900 dark:text-gray-100 text-sm sm:text-base">{{ $topicAnalyses->count() }}件の分析・図解</h3>
+    <div class="flex items-center gap-3">
+        <h3 class="font-bold text-gray-900 dark:text-gray-100 text-sm sm:text-base">{{ $topicAnalyses->count() }}件の分析・図解</h3>
+        <form method="GET" action="{{ route('topics.show', $topic) }}" class="flex m-0 p-0">
+            @if(request('category')) <input type="hidden" name="category" value="{{ request('category') }}"> @endif
+            @if(request('sort')) <input type="hidden" name="sort" value="{{ request('sort') }}"> @endif
+            @if(request('comment_sort')) <input type="hidden" name="comment_sort" value="{{ request('comment_sort') }}"> @endif
+            <select name="analysis_sort" onchange="this.form.submit()" class="text-xs sm:text-sm rounded border-gray-300 dark:border-gray-700 shadow-sm focus:border-gray-500 focus:ring-gray-500 dark:bg-[#1e1f20] dark:text-white py-1">
+                <option value="popular" {{ request('analysis_sort') === 'popular' || !request('analysis_sort') ? 'selected' : '' }}>人気順</option>
+                <option value="newest" {{ request('analysis_sort') === 'newest' ? 'selected' : '' }}>新着順</option>
+                <option value="oldest" {{ request('analysis_sort') === 'oldest' ? 'selected' : '' }}>古い順</option>
+            </select>
+        </form>
+    </div>
 
     <button @click="isAnalysisModalOpen = true" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-1 px-3 sm:py-1.5 sm:px-4 rounded text-xs sm:text-sm transition-colors flex items-center shrink-0">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -91,7 +103,6 @@
             @elseif($analysis->type === 'swot')
             @php
             $isPest = isset($previewData['framework']) && $previewData['framework'] === 'PEST';
-            // 新データ(box1)と旧データ(strengths)の両方に対応する安全設計
             $b1 = $previewData['box1'] ?? $previewData['strengths'] ?? [];
             $b2 = $previewData['box2'] ?? $previewData['weaknesses'] ?? [];
             $b3 = $previewData['box3'] ?? $previewData['opportunities'] ?? [];
@@ -133,17 +144,26 @@
 
             <div class="flex items-center gap-3">
                 @if ($analysis->user_id === auth()->id())
-                <button type="button" onclick="alert('削除機能は準備中です')" class="text-xs text-red-400 hover:text-red-600 transition-colors">削除</button>
+                <form method="POST" action="{{ route('analyses.destroy', $analysis) }}" onsubmit="return confirm('この分析・図解を本当に削除しますか？');" class="m-0 p-0">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="text-xs text-red-400 hover:text-red-600 transition-colors">削除</button>
+                </form>
                 <span class="text-gray-300 dark:text-gray-700">|</span>
                 @endif
 
-                <button type="button" class="flex items-center space-x-1 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6.633 10.25c.806 0 1.533-.446 2.031-1.08a9.041 9.041 0 0 1 2.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 0 0 .322-1.672V2.75a.75.75 0 0 1 .75-.75 2.25 2.25 0 0 1 1.5.58c.36.31.6.76.68 1.25.04.24.06.49.06.75 0 .76-.23 1.48-.63 2.08-.2.31-.05.73.3.88l3.126.33a2.25 2.25 0 0 1 1.954 2.65l-1.42 6.75c-.24 1.14-1.28 1.96-2.45 1.96H13.5a5.5 5.5 0 0 1-2.5-.6l-3.11-1.42a4.5 4.5 0 0 0-1.43-.24H5.9c-.83 0-1.5-.67-1.5-1.5V11.75c0-.83.67-1.5 1.5-1.5h.733Z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 10.25h1.5v9h-1.5v-9Z" />
-                    </svg>
-                    <span class="text-sm">0</span>
-                </button>
+                <form method="POST" action="{{ route('analyses.like', $analysis) }}" class="m-0 p-0">
+                    @csrf
+                    <button type="submit" class="flex items-center space-x-1 transition-colors duration-200 {{ $analysis->isLikedBy(auth()->user()) ? 'text-gray-900 dark:text-white font-bold' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300' }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="{{ $analysis->isLikedBy(auth()->user()) ? 'currentColor' : 'none' }}" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6.633 10.25c.806 0 1.533-.446 2.031-1.08a9.041 9.041 0 0 1 2.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 0 0 .322-1.672V2.75a.75.75 0 0 1 .75-.75 2.25 2.25 0 0 1 1.5.58c.36.31.6.76.68 1.25.04.24.06.49.06.75 0 .76-.23 1.48-.63 2.08-.2.31-.05.73.3.88l3.126.33a2.25 2.25 0 0 1 1.954 2.65l-1.42 6.75c-.24 1.14-1.28 1.96-2.45 1.96H13.5a5.5 5.5 0 0 1-2.5-.6l-3.11-1.42a4.5 4.5 0 0 0-1.43-.24H5.9c-.83 0-1.5-.67-1.5-1.5V11.75c0-.83.67-1.5 1.5-1.5h.733Z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 10.25h1.5v9h-1.5v-9Z" />
+                        </svg>
+                        @if($analysis->likes->count() > 0)
+                            <span class="text-sm">{{ $analysis->likes->count() }}</span>
+                        @endif
+                    </button>
+                </form>
             </div>
         </div>
 
