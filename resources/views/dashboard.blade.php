@@ -109,7 +109,8 @@
                                                     @elseif($analysis->type === 'matrix')
                                                         <span class="text-[10px] font-bold bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-400 px-2 py-0.5 rounded">総合評価表</span>
                                                     @elseif($analysis->type === 'swot')
-                                                        <span class="text-[10px] font-bold bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-400 px-2 py-0.5 rounded">SWOT分析</span>
+                                                        @php $isPest = isset($analysis->data['framework']) && $analysis->data['framework'] === 'PEST'; @endphp
+                                                        <span class="text-[10px] font-bold bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-400 px-2 py-0.5 rounded">{{ $isPest ? 'PEST分析' : 'SWOT分析' }}</span>
                                                     @endif
                                                 </div>
                                                 

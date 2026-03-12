@@ -4,7 +4,10 @@
             <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight flex items-center">
                 @if($analysis->type === 'tree') <svg class="h-5 w-5 mr-2 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" /></svg> ロジックツリー分析
                 @elseif($analysis->type === 'matrix') <svg class="h-5 w-5 mr-2 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg> 総合評価表
-                @elseif($analysis->type === 'swot') <svg class="h-5 w-5 mr-2 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg> SWOT分析
+                @elseif($analysis->type === 'swot')
+                    @php $isPest = isset($analysis->data['framework']) && $analysis->data['framework'] === 'PEST'; @endphp
+                    <svg class="h-5 w-5 mr-2 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+                    {{ $isPest ? 'PEST分析' : 'SWOT分析' }}
                 @endif
             </h2>
             <a href="{{ url()->previous() }}" class="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors">
@@ -179,46 +182,49 @@
                 </div>
 
             @elseif($analysis->type === 'swot')
-                @php $data = $analysis->data; @endphp
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                @php
+                    $swotData = $analysis->data;
+                    $isPest = isset($swotData['framework']) && $swotData['framework'] === 'PEST';
+                    $b1 = $swotData['box1'] ?? $swotData['strengths'] ?? [];
+                    $b2 = $swotData['box2'] ?? $swotData['weaknesses'] ?? [];
+                    $b3 = $swotData['box3'] ?? $swotData['opportunities'] ?? [];
+                    $b4 = $swotData['box4'] ?? $swotData['threats'] ?? [];
+                @endphp
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="bg-white dark:bg-[#1e1f20] border-t-4 border-blue-500 rounded-lg p-5 shadow-sm border-x border-b dark:border-transparent border-gray-200">
                         <h2 class="text-lg font-bold text-blue-600 dark:text-blue-400 mb-3 border-b border-gray-200 dark:border-gray-700 pb-2 flex items-center">
-                            <span class="text-2xl mr-2">S</span>trengths <span class="text-xs text-gray-500 ml-2 font-normal">強み</span>
+                            @if($isPest) <span class="text-2xl mr-2">P</span>olitics <span class="text-xs text-gray-500 ml-2 font-normal">政治</span>
+                            @else <span class="text-2xl mr-2">S</span>trengths <span class="text-xs text-gray-500 ml-2 font-normal">強み</span> @endif
                         </h2>
                         <ul class="space-y-2 pl-1">
-                            @foreach($data['strengths'] ?? [] as $item)
-                                <li class="text-sm text-gray-800 dark:text-gray-200 flex items-start"><span class="text-blue-500 mr-2 mt-0.5">•</span> <span>{{ $item }}</span></li>
-                            @endforeach
+                            @foreach($b1 as $item) <li class="text-sm text-gray-800 dark:text-gray-200 flex items-start"><span class="text-blue-500 mr-2 mt-0.5">•</span> <span>{{ $item }}</span></li> @endforeach
                         </ul>
                     </div>
                     <div class="bg-white dark:bg-[#1e1f20] border-t-4 border-red-500 rounded-lg p-5 shadow-sm border-x border-b dark:border-transparent border-gray-200">
                         <h2 class="text-lg font-bold text-red-600 dark:text-red-400 mb-3 border-b border-gray-200 dark:border-gray-700 pb-2 flex items-center">
-                            <span class="text-2xl mr-2">W</span>eaknesses <span class="text-xs text-gray-500 ml-2 font-normal">弱み</span>
+                            @if($isPest) <span class="text-2xl mr-2">E</span>conomy <span class="text-xs text-gray-500 ml-2 font-normal">経済</span>
+                            @else <span class="text-2xl mr-2">W</span>eaknesses <span class="text-xs text-gray-500 ml-2 font-normal">弱み</span> @endif
                         </h2>
                         <ul class="space-y-2 pl-1">
-                            @foreach($data['weaknesses'] ?? [] as $item)
-                                <li class="text-sm text-gray-800 dark:text-gray-200 flex items-start"><span class="text-red-500 mr-2 mt-0.5">•</span> <span>{{ $item }}</span></li>
-                            @endforeach
+                            @foreach($b2 as $item) <li class="text-sm text-gray-800 dark:text-gray-200 flex items-start"><span class="text-red-500 mr-2 mt-0.5">•</span> <span>{{ $item }}</span></li> @endforeach
                         </ul>
                     </div>
                     <div class="bg-white dark:bg-[#1e1f20] border-t-4 border-green-500 rounded-lg p-5 shadow-sm border-x border-b dark:border-transparent border-gray-200">
                         <h2 class="text-lg font-bold text-green-600 dark:text-green-400 mb-3 border-b border-gray-200 dark:border-gray-700 pb-2 flex items-center">
-                            <span class="text-2xl mr-2">O</span>pportunities <span class="text-xs text-gray-500 ml-2 font-normal">機会</span>
+                            @if($isPest) <span class="text-2xl mr-2">S</span>ociety <span class="text-xs text-gray-500 ml-2 font-normal">社会</span>
+                            @else <span class="text-2xl mr-2">O</span>pportunities <span class="text-xs text-gray-500 ml-2 font-normal">機会</span> @endif
                         </h2>
                         <ul class="space-y-2 pl-1">
-                            @foreach($data['opportunities'] ?? [] as $item)
-                                <li class="text-sm text-gray-800 dark:text-gray-200 flex items-start"><span class="text-green-500 mr-2 mt-0.5">•</span> <span>{{ $item }}</span></li>
-                            @endforeach
+                            @foreach($b3 as $item) <li class="text-sm text-gray-800 dark:text-gray-200 flex items-start"><span class="text-green-500 mr-2 mt-0.5">•</span> <span>{{ $item }}</span></li> @endforeach
                         </ul>
                     </div>
                     <div class="bg-white dark:bg-[#1e1f20] border-t-4 border-yellow-500 rounded-lg p-5 shadow-sm border-x border-b dark:border-transparent border-gray-200">
                         <h2 class="text-lg font-bold text-yellow-600 dark:text-yellow-400 mb-3 border-b border-gray-200 dark:border-gray-700 pb-2 flex items-center">
-                            <span class="text-2xl mr-2">T</span>hreats <span class="text-xs text-gray-500 ml-2 font-normal">脅威</span>
+                            @if($isPest) <span class="text-2xl mr-2">T</span>echnology <span class="text-xs text-gray-500 ml-2 font-normal">技術</span>
+                            @else <span class="text-2xl mr-2">T</span>hreats <span class="text-xs text-gray-500 ml-2 font-normal">脅威</span> @endif
                         </h2>
                         <ul class="space-y-2 pl-1">
-                            @foreach($data['threats'] ?? [] as $item)
-                                <li class="text-sm text-gray-800 dark:text-gray-200 flex items-start"><span class="text-yellow-500 mr-2 mt-0.5">•</span> <span>{{ $item }}</span></li>
-                            @endforeach
+                            @foreach($b4 as $item) <li class="text-sm text-gray-800 dark:text-gray-200 flex items-start"><span class="text-yellow-500 mr-2 mt-0.5">•</span> <span>{{ $item }}</span></li> @endforeach
                         </ul>
                     </div>
                 </div>

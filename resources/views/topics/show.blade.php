@@ -322,7 +322,9 @@
                                         <div class="flex items-center gap-2 mt-1">
                                             @if($analysis->type === 'tree') <span class="inline-block px-2 py-0.5 text-xs font-bold rounded border border-blue-200 text-blue-600 dark:border-blue-800 dark:text-blue-400">ロジックツリー</span>
                                             @elseif($analysis->type === 'matrix') <span class="inline-block px-2 py-0.5 text-xs font-bold rounded border border-purple-200 text-purple-600 dark:border-purple-800 dark:text-purple-400">総合評価表</span>
-                                            @elseif($analysis->type === 'swot') <span class="inline-block px-2 py-0.5 text-xs font-bold rounded border border-green-200 text-green-600 dark:border-green-800 dark:text-green-400">SWOT分析</span>
+                                            @elseif($analysis->type === 'swot')
+                                            @php $isPest = isset($analysis->data['framework']) && $analysis->data['framework'] === 'PEST'; @endphp
+                                            <span class="inline-block px-2 py-0.5 text-xs font-bold rounded border border-green-200 text-green-600 dark:border-green-800 dark:text-green-400">{{ $isPest ? 'PEST分析' : 'SWOT分析' }}</span>
                                             @endif
                                         </div>
                                         <div class="text-right text-xs text-gray-500 dark:text-gray-400">
@@ -379,29 +381,37 @@
                                                 </ul>
                                             </div>
                                         @elseif($analysis->type === 'swot')
+                                            @php
+                                                $isPest = isset($previewData['framework']) && $previewData['framework'] === 'PEST';
+                                                // 新データ(box1)と旧データ(strengths)の両方に対応する安全設計
+                                                $b1 = $previewData['box1'] ?? $previewData['strengths'] ?? [];
+                                                $b2 = $previewData['box2'] ?? $previewData['weaknesses'] ?? [];
+                                                $b3 = $previewData['box3'] ?? $previewData['opportunities'] ?? [];
+                                                $b4 = $previewData['box4'] ?? $previewData['threats'] ?? [];
+                                            @endphp
                                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                 <div>
-                                                    <span class="font-bold text-blue-500 mb-1 inline-block">S (強み):</span>
+                                                    <span class="font-bold text-blue-500 mb-1 inline-block">{{ $isPest ? 'P (政治)' : 'S (強み)' }}:</span>
                                                     <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1">
-                                                        @forelse(array_slice($previewData['strengths'] ?? [], 0, 3) as $txt) <li class="truncate">{{ $txt }}</li> @empty <li class="text-gray-500">記載なし</li> @endforelse
+                                                        @forelse(array_slice($b1, 0, 3) as $txt) <li class="truncate">{{ $txt }}</li> @empty <li class="text-gray-500">記載なし</li> @endforelse
                                                     </ul>
                                                 </div>
                                                 <div>
-                                                    <span class="font-bold text-red-500 mb-1 inline-block">W (弱み):</span>
+                                                    <span class="font-bold text-red-500 mb-1 inline-block">{{ $isPest ? 'E (経済)' : 'W (弱み)' }}:</span>
                                                     <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1">
-                                                        @forelse(array_slice($previewData['weaknesses'] ?? [], 0, 3) as $txt) <li class="truncate">{{ $txt }}</li> @empty <li class="text-gray-500">記載なし</li> @endforelse
+                                                        @forelse(array_slice($b2, 0, 3) as $txt) <li class="truncate">{{ $txt }}</li> @empty <li class="text-gray-500">記載なし</li> @endforelse
                                                     </ul>
                                                 </div>
                                                 <div>
-                                                    <span class="font-bold text-green-500 mb-1 inline-block">O (機会):</span>
+                                                    <span class="font-bold text-green-500 mb-1 inline-block">{{ $isPest ? 'S (社会)' : 'O (機会)' }}:</span>
                                                     <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1">
-                                                        @forelse(array_slice($previewData['opportunities'] ?? [], 0, 3) as $txt) <li class="truncate">{{ $txt }}</li> @empty <li class="text-gray-500">記載なし</li> @endforelse
+                                                        @forelse(array_slice($b3, 0, 3) as $txt) <li class="truncate">{{ $txt }}</li> @empty <li class="text-gray-500">記載なし</li> @endforelse
                                                     </ul>
                                                 </div>
                                                 <div>
-                                                    <span class="font-bold text-yellow-500 mb-1 inline-block">T (脅威):</span>
+                                                    <span class="font-bold text-yellow-500 mb-1 inline-block">{{ $isPest ? 'T (技術)' : 'T (脅威)' }}:</span>
                                                     <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1">
-                                                        @forelse(array_slice($previewData['threats'] ?? [], 0, 3) as $txt) <li class="truncate">{{ $txt }}</li> @empty <li class="text-gray-500">記載なし</li> @endforelse
+                                                        @forelse(array_slice($b4, 0, 3) as $txt) <li class="truncate">{{ $txt }}</li> @empty <li class="text-gray-500">記載なし</li> @endforelse
                                                     </ul>
                                                 </div>
                                             </div>

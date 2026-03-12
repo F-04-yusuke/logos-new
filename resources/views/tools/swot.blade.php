@@ -17,10 +17,16 @@
 
             <div class="flex flex-col gap-6">
                 <div class="border-b border-gray-200 dark:border-gray-800 pb-4 flex justify-between items-end">
-                    <p class="text-sm text-gray-600 dark:text-gray-400">内部要因（強み・弱み）と外部要因（機会・脅威）を整理する定番フレームワークです。</p>
-                    <button onclick="generateWithAI()" id="ai-btn" class="text-xs font-bold text-white transition-colors flex items-center bg-blue-600 hover:bg-blue-500 px-3 py-1.5 rounded shadow-md h-fit">
+                    <div>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">内部要因・外部要因、またはマクロ環境を整理するフレームワークです。</p>
+                        <select id="framework-select" onchange="toggleFramework()" class="bg-white dark:bg-[#131314] border border-gray-300 dark:border-gray-700 rounded text-gray-900 dark:text-gray-100 text-sm px-2 py-1 focus:outline-none focus:border-blue-500 font-bold">
+                            <option value="SWOT">SWOT分析 (強み・弱み・機会・脅威)</option>
+                            <option value="PEST">PEST分析 (政治・経済・社会・技術)</option>
+                        </select>
+                    </div>
+                    <button onclick="generateWithAI()" id="ai-btn" class="text-xs font-bold text-white transition-colors flex items-center bg-blue-600 hover:bg-blue-500 px-3 py-1.5 rounded shadow-md h-fit shrink-0">
                         <svg class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                        AIでSWOTを自動生成
+                        AIで自動生成
                     </button>
                 </div>
 
@@ -32,7 +38,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="bg-white dark:bg-[#1e1f20] border-t-4 border-blue-500 rounded-lg p-4 shadow-sm dark:shadow-lg flex flex-col h-full border-x border-b dark:border-transparent border-gray-200">
                         <div class="flex justify-between items-center mb-3 border-b border-gray-200 dark:border-gray-700 pb-2">
-                            <h2 class="text-lg font-bold text-blue-600 dark:text-blue-400 flex items-center">
+                            <h2 id="label-box1" class="text-lg font-bold text-blue-600 dark:text-blue-400 flex items-center">
                                 <span class="text-2xl mr-2">S</span>trengths <span class="text-sm text-gray-500 dark:text-gray-400 ml-2 font-normal">強み (内部要因)</span>
                             </h2>
                         </div>
@@ -42,7 +48,7 @@
 
                     <div class="bg-white dark:bg-[#1e1f20] border-t-4 border-red-500 rounded-lg p-4 shadow-sm dark:shadow-lg flex flex-col h-full border-x border-b dark:border-transparent border-gray-200">
                         <div class="flex justify-between items-center mb-3 border-b border-gray-200 dark:border-gray-700 pb-2">
-                            <h2 class="text-lg font-bold text-red-600 dark:text-red-400 flex items-center">
+                            <h2 id="label-box2" class="text-lg font-bold text-red-600 dark:text-red-400 flex items-center">
                                 <span class="text-2xl mr-2">W</span>eaknesses <span class="text-sm text-gray-500 dark:text-gray-400 ml-2 font-normal">弱み (内部要因)</span>
                             </h2>
                         </div>
@@ -52,7 +58,7 @@
 
                     <div class="bg-white dark:bg-[#1e1f20] border-t-4 border-green-500 rounded-lg p-4 shadow-sm dark:shadow-lg flex flex-col h-full border-x border-b dark:border-transparent border-gray-200">
                         <div class="flex justify-between items-center mb-3 border-b border-gray-200 dark:border-gray-700 pb-2">
-                            <h2 class="text-lg font-bold text-green-600 dark:text-green-400 flex items-center">
+                            <h2 id="label-box3" class="text-lg font-bold text-green-600 dark:text-green-400 flex items-center">
                                 <span class="text-2xl mr-2">O</span>pportunities <span class="text-sm text-gray-500 dark:text-gray-400 ml-2 font-normal">機会 (外部要因)</span>
                             </h2>
                         </div>
@@ -62,7 +68,7 @@
 
                     <div class="bg-white dark:bg-[#1e1f20] border-t-4 border-yellow-500 rounded-lg p-4 shadow-sm dark:shadow-lg flex flex-col h-full border-x border-b dark:border-transparent border-gray-200">
                         <div class="flex justify-between items-center mb-3 border-b border-gray-200 dark:border-gray-700 pb-2">
-                            <h2 class="text-lg font-bold text-yellow-600 dark:text-yellow-400 flex items-center">
+                            <h2 id="label-box4" class="text-lg font-bold text-yellow-600 dark:text-yellow-400 flex items-center">
                                 <span class="text-2xl mr-2">T</span>hreats <span class="text-sm text-gray-500 dark:text-gray-400 ml-2 font-normal">脅威 (外部要因)</span>
                             </h2>
                         </div>
@@ -120,39 +126,32 @@
             if (badge) { badge.style.opacity = '0'; setTimeout(() => badge.remove(), 300); }
         }
 
-        function generateWithAI() {
-            const btn = document.getElementById('ai-btn');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = `<span class="animate-pulse">AIが多角的に分析中...</span>`;
-            btn.classList.add('opacity-70', 'cursor-not-allowed');
-
-            ['list-s', 'list-w', 'list-o', 'list-t'].forEach(id => document.getElementById(id).innerHTML = '');
-            document.getElementById('theme-input').value = "日本の原発再稼働について";
-
-            setTimeout(() => {
-                addItem('list-s', 'ベースロード電源としての安定した供給能力', true);
-                addItem('list-s', '発電時のCO2排出量が極めて少ない', true);
-                addItem('list-w', '過酷事故発生時の国土に対する壊滅的なリスク', true);
-                addItem('list-w', '高レベル放射性廃棄物（核のゴミ）の最終処分場が未定', true);
-                addItem('list-o', '生成AI普及やデータセンター増設に伴う電力需要の爆発的増加', true);
-                addItem('list-o', '中東情勢の不安定化による化石燃料の価格高騰リスクの回避', true);
-                addItem('list-t', '日本特有の巨大地震・津波などの予期せぬ自然災害', true);
-                addItem('list-t', 'ミサイルやテロリストによる原発施設への直接攻撃リスク', true);
-
-                btn.innerHTML = originalText;
-                btn.classList.remove('opacity-70', 'cursor-not-allowed');
-            }, 1000);
+        // 🌟 追加1：プルダウン変更時にタイトルを切り替える
+        function toggleFramework() {
+            const fw = document.getElementById('framework-select').value;
+            if (fw === 'SWOT') {
+                document.getElementById('label-box1').innerHTML = '<span class="text-2xl mr-2">S</span>trengths <span class="text-sm text-gray-500 dark:text-gray-400 ml-2 font-normal">強み (内部要因)</span>';
+                document.getElementById('label-box2').innerHTML = '<span class="text-2xl mr-2">W</span>eaknesses <span class="text-sm text-gray-500 dark:text-gray-400 ml-2 font-normal">弱み (内部要因)</span>';
+                document.getElementById('label-box3').innerHTML = '<span class="text-2xl mr-2">O</span>pportunities <span class="text-sm text-gray-500 dark:text-gray-400 ml-2 font-normal">機会 (外部要因)</span>';
+                document.getElementById('label-box4').innerHTML = '<span class="text-2xl mr-2">T</span>hreats <span class="text-sm text-gray-500 dark:text-gray-400 ml-2 font-normal">脅威 (外部要因)</span>';
+            } else {
+                document.getElementById('label-box1').innerHTML = '<span class="text-2xl mr-2">P</span>olitics <span class="text-sm text-gray-500 dark:text-gray-400 ml-2 font-normal">政治</span>';
+                document.getElementById('label-box2').innerHTML = '<span class="text-2xl mr-2">E</span>conomy <span class="text-sm text-gray-500 dark:text-gray-400 ml-2 font-normal">経済</span>';
+                document.getElementById('label-box3').innerHTML = '<span class="text-2xl mr-2">S</span>ociety <span class="text-sm text-gray-500 dark:text-gray-400 ml-2 font-normal">社会</span>';
+                document.getElementById('label-box4').innerHTML = '<span class="text-2xl mr-2">T</span>echnology <span class="text-sm text-gray-500 dark:text-gray-400 ml-2 font-normal">技術</span>';
+            }
         }
 
-        // 本物のAIと通信してSWOTを自動生成する
+        // 🌟 追加2：SWOT/PESTを判定してAIに指示を出す（1つにまとめます）
         function generateWithAI() {
             const btn = document.getElementById('ai-btn');
             const originalText = btn.innerHTML;
             const themeInput = document.getElementById('theme-input');
             const theme = themeInput.value.trim();
+            const fw = document.getElementById('framework-select').value;
 
             if (!theme) {
-                alert("AIに分析させる「テーマ（主題）」を入力してください。");
+                alert("AIに分析させるテーマ（主題）を入力してください。");
                 themeInput.focus();
                 return;
             }
@@ -161,60 +160,45 @@
             btn.classList.add('opacity-70', 'cursor-not-allowed');
             btn.disabled = true;
 
-            // 既存のリストをクリア
             ['list-s', 'list-w', 'list-o', 'list-t'].forEach(id => document.getElementById(id).innerHTML = '');
 
-            // AIへの指示（プロンプト）を作成
-            const promptText = `
-                以下のテーマについてSWOT分析を行ってください。
+            const promptText = fw === 'PEST' ? `
                 テーマ: 「${theme}」
-                
-                出力は必ず以下のJSON形式のみとし、他のテキスト（マークダウンや挨拶など）は一切含めないでください。
-                {
-                    "strengths": ["強み1", "強み2", "強み3"],
-                    "weaknesses": ["弱み1", "弱み2", "弱み3"],
-                    "opportunities": ["機会1", "機会2", "機会3"],
-                    "threats": ["脅威1", "脅威2", "脅威3"]
-                }
+                このテーマについてPEST分析を行ってください。
+                出力は必ず以下のJSON形式のみとし、他のテキストは一切含めないでください。
+                {"box1":["政治的要因1","政治的要因2"],"box2":["経済的要因1","経済的要因2"],"box3":["社会的要因1","社会的要因2"],"box4":["技術的要因1","技術的要因2"]}
+            ` : `
+                テーマ: 「${theme}」
+                このテーマについてSWOT分析を行ってください。
+                出力は必ず以下のJSON形式のみとし、他のテキストは一切含めないでください。
+                {"box1":["強み1","強み2"],"box2":["弱み1","弱み2"],"box3":["機会1","機会2"],"box4":["脅威1","脅威2"]}
             `;
 
-            // Laravelのバックエンド（AnalysisController@aiAssist）に送信
             fetch('{{ route("tools.ai_assist") }}', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                },
-                body: JSON.stringify({
-                    prompt: promptText,
-                    context: "現在、ユーザーはSWOT分析の自動生成を求めています。必ず指定されたJSONフォーマットのみで返答してください。"
-                })
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                body: JSON.stringify({ prompt: promptText, context: "JSONのみ出力" })
             })
-            .then(response => response.json())
+            .then(res => res.json())
             .then(data => {
                 if (data.error) throw new Error(data.error);
+                const jsonMatch = data.reply.match(/\{[\s\S]*\}/);
+                if (!jsonMatch) throw new Error("JSON抽出失敗");
                 
-                try {
-                    // AIの返答（テキスト）からJSON部分だけを抜き出して解析
-                    const jsonMatch = data.reply.match(/\{[\s\S]*\}/);
-                    if (!jsonMatch) throw new Error("JSONデータの抽出に失敗しました。");
-                    
-                    const swotData = JSON.parse(jsonMatch[0]);
-
-                    // 各リストにAIの回答を追加
-                    if (swotData.strengths) swotData.strengths.forEach(txt => addItem('list-s', txt, true));
-                    if (swotData.weaknesses) swotData.weaknesses.forEach(txt => addItem('list-w', txt, true));
-                    if (swotData.opportunities) swotData.opportunities.forEach(txt => addItem('list-o', txt, true));
-                    if (swotData.threats) swotData.threats.forEach(txt => addItem('list-t', txt, true));
-
-                } catch (e) {
-                    console.error('Parse Error:', e);
-                    alert("AIの回答の解析に失敗しました。もう一度お試しください。");
-                }
+                const parsedData = JSON.parse(jsonMatch[0]);
+                if (parsedData.box1) parsedData.box1.forEach(txt => addItem('list-s', txt, true));
+                if (parsedData.box2) parsedData.box2.forEach(txt => addItem('list-w', txt, true));
+                if (parsedData.box3) parsedData.box3.forEach(txt => addItem('list-o', txt, true));
+                if (parsedData.box4) parsedData.box4.forEach(txt => addItem('list-t', txt, true));
+                
+                // AI生成後、テキストエリアの高さを調整
+                setTimeout(() => {
+                    document.querySelectorAll('textarea').forEach(t => autoResize(t));
+                }, 100);
             })
-            .catch(error => {
-                console.error('Fetch Error:', error);
-                alert("通信エラーが発生しました。時間をおいて再度お試しください。");
+            .catch(err => {
+                console.error(err);
+                alert("AIの分析に失敗しました。もう一度お試しください。");
             })
             .finally(() => {
                 btn.innerHTML = originalText;
@@ -223,36 +207,30 @@
             });
         }
 
-        // データベースに送信する処理
+        // 🌟 追加3：保存時にフレームワークの種類も一緒に保存する
         function saveSwot() {
             const btn = document.getElementById('save-btn');
             const originalText = btn.innerHTML;
             btn.innerHTML = '保存中...';
             btn.disabled = true;
 
-            // テーマと4つの領域のデータを取得
+            const fw = document.getElementById('framework-select').value;
             const theme = document.getElementById('theme-input').value.trim() || '未設定のテーマ';
             const swotData = {
+                framework: fw,
                 theme: theme,
-                strengths: getListData('list-s'),
-                weaknesses: getListData('list-w'),
-                opportunities: getListData('list-o'),
-                threats: getListData('list-t')
+                box1: getListData('list-s'),
+                box2: getListData('list-w'),
+                box3: getListData('list-o'),
+                box4: getListData('list-t')
             };
 
-            const title = theme !== '未設定のテーマ' ? 'SWOT: ' + theme : 'SWOT分析 (' + new Date().toLocaleDateString() + ')';
+            const title = theme !== '未設定のテーマ' ? fw + ': ' + theme : fw + '分析 (' + new Date().toLocaleDateString() + ')';
 
             fetch('{{ route("tools.store") }}', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                },
-                body: JSON.stringify({
-                    title: title,
-                    type: 'swot',
-                    data: swotData
-                })
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                body: JSON.stringify({ title: title, type: 'swot', data: swotData })
             })
             .then(response => response.json())
             .then(data => {
