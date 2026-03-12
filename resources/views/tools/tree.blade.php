@@ -52,6 +52,17 @@
                             <span class="text-xs text-gray-500 dark:text-gray-400">AI読み込み用データ</span>
                         </div>
                         
+                        <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6 flex flex-col sm:flex-row gap-3 items-end">
+                            <div class="flex-1 w-full">
+                                <label class="block text-xs font-bold text-blue-800 dark:text-blue-300 mb-1">AIでツリーの土台を自動生成</label>
+                                <input type="text" id="tree-theme-input" class="w-full bg-white dark:bg-[#131314] border border-blue-300 dark:border-blue-700 rounded text-gray-900 dark:text-gray-100 text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="議論したいテーマを入力（例：消費税増税の是非について）">
+                            </div>
+                            <button id="ai-generate-btn" onclick="generateWithAI()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded text-sm transition-colors shadow-sm shrink-0 flex items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                                AIで生成
+                            </button>
+                        </div>
+
                         <div class="space-y-2 mb-3">
                             <input type="url" id="info-url" class="w-full bg-transparent dark:bg-[#131314] border-b border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-200 text-sm py-2 focus:outline-none focus:border-blue-500 transition-colors placeholder-gray-400 dark:placeholder-gray-600" placeholder="元情報のURL (例: https://youtu.be/...)">
                             <textarea id="info-desc" oninput="autoResize(this)" class="w-full bg-transparent dark:bg-[#131314] border-b border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-200 text-sm py-2 focus:outline-none focus:border-blue-500 transition-colors placeholder-gray-400 dark:placeholder-gray-600" rows="1" placeholder="トピックの主題や元情報の概要を入力..."></textarea>
@@ -114,6 +125,7 @@
             textarea.style.height = (textarea.scrollHeight) + 'px';
         }
 
+        // 🌟 修正1：手動追加時のプルダウンに「主張」を追加
         function addNode(container) {
             const nodeHTML = `
                 <div class="mt-2 group relative tree-line tree-node">
@@ -130,7 +142,8 @@
                             <span class="speaker-id text-xs font-black text-gray-500 dark:text-gray-500 bg-gray-200 dark:bg-gray-800 px-1.5 py-0.5 rounded"></span>
 
                             <select onchange="updateStanceColor(this)" class="stance-select text-[10px] px-1.5 py-0.5 rounded focus:outline-none cursor-pointer border bg-red-100 dark:bg-red-400/10 text-red-600 dark:text-red-400 border-red-200 dark:border-red-400/30">
-                                <option value="反論" class="bg-white dark:bg-[#1e1f20] text-red-600 dark:text-red-400">反論</option>
+                                <option value="主張" class="bg-white dark:bg-[#1e1f20] text-gray-600 dark:text-gray-400">主張</option>
+                                <option value="反論" class="bg-white dark:bg-[#1e1f20] text-red-600 dark:text-red-400" selected>反論</option>
                                 <option value="賛成・補足" class="bg-white dark:bg-[#1e1f20] text-green-600 dark:text-green-400">賛成・補足</option>
                                 <option value="疑問" class="bg-white dark:bg-[#1e1f20] text-yellow-600 dark:text-yellow-400">疑問</option>
                             </select>
@@ -209,10 +222,12 @@
             }
         }
 
+        // 🌟 修正2：スタンスに「主張」の時の色を追加
         function updateStanceColor(selectElement) {
             selectElement.className = 'stance-select text-[10px] px-1.5 py-0.5 rounded focus:outline-none cursor-pointer border';
             const value = selectElement.value;
-            if (value === '反論') selectElement.classList.add('bg-red-100', 'text-red-600', 'border-red-200', 'dark:bg-red-400/10', 'dark:text-red-400', 'dark:border-red-400/30');
+            if (value === '主張') selectElement.classList.add('bg-gray-100', 'text-gray-600', 'border-gray-200', 'dark:bg-gray-400/10', 'dark:text-gray-400', 'dark:border-gray-400/30');
+            else if (value === '反論') selectElement.classList.add('bg-red-100', 'text-red-600', 'border-red-200', 'dark:bg-red-400/10', 'dark:text-red-400', 'dark:border-red-400/30');
             else if (value === '賛成・補足') selectElement.classList.add('bg-green-100', 'text-green-600', 'border-green-200', 'dark:bg-green-400/10', 'dark:text-green-400', 'dark:border-green-400/30');
             else if (value === '疑問') selectElement.classList.add('bg-yellow-100', 'text-yellow-600', 'border-yellow-200', 'dark:bg-yellow-400/10', 'dark:text-yellow-400', 'dark:border-yellow-400/30');
         }
@@ -257,7 +272,7 @@
             chatHistory.insertAdjacentHTML('beforeend', loadingMsg);
             chatHistory.scrollTop = chatHistory.scrollHeight;
 
-            // 🌟 修正済：現在のツリー構造と事前情報を読み取ってAIに送る
+            // 現在のツリー構造と事前情報を読み取ってAIに送る
             const rootContainer = document.getElementById('root-replies');
             const treeData = buildTreeData(rootContainer);
             const urlInput = document.getElementById('info-url');
@@ -343,7 +358,7 @@
             btn.innerHTML = '保存中...';
             btn.disabled = true;
 
-            // 🌟 修正：事前情報（meta）とツリー構造（nodes）をセットにして保存
+            // 事前情報（meta）とツリー構造（nodes）をセットにして保存
             const rootContainer = document.getElementById('root-replies');
             const treeData = buildTreeData(rootContainer);
             const url = document.getElementById('info-url').value.trim();
@@ -379,5 +394,154 @@
             });
         }
         
+        // 本物のAIと通信してロジックツリーを自動生成する
+        // 🌟 修正3：AIに正しい話者名を指定させる＆生成後にラベルを更新する
+        function generateWithAI() {
+            const btn = document.getElementById('ai-generate-btn');
+            const theme = document.getElementById('tree-theme-input').value.trim();
+            if (!theme) { alert('テーマを入力してください'); return; }
+
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<span class="animate-pulse">AIがツリーを構築中...</span>';
+            btn.disabled = true;
+            btn.classList.add('opacity-70', 'cursor-not-allowed');
+
+            const prompt = `
+                テーマ: 「${theme}」
+                このテーマについて、多角的な議論を展開するロジックツリー（主張とそれに対する賛成・反論・疑問の分岐）を自動生成してください。
+                深さは2〜3階層、合計5〜8ノード程度にしてください。
+                各ノードは以下のプロパティを持つJSONオブジェクトの配列として出力してください。他のテキストは一切含めないでください。
+                ※ "speaker" の値は必ず「自分 (自)」「ユーザーA」「ユーザーB」「ユーザーC」のいずれかにしてください。
+                [
+                  {
+                    "speaker": "自分 (自)",
+                    "stance": "主張",
+                    "text": "テーマに対するメインの主張や問い",
+                    "children": [
+                      {
+                        "speaker": "ユーザーA",
+                        "stance": "反論",
+                        "text": "メインの主張に対する反論や懸念",
+                        "children": []
+                      },
+                      {
+                        "speaker": "自分 (自)",
+                        "stance": "賛成・補足",
+                        "text": "メインの主張を補強する理由",
+                        "children": []
+                      }
+                    ]
+                  }
+                ]
+            `;
+
+            fetch('{{ route("tools.ai_assist") }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                body: JSON.stringify({ prompt: prompt, context: "JSON配列のみ出力" })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.error) throw new Error(data.error);
+                
+                const jsonMatch = data.reply.match(/\[[\s\S]*\]/);
+                if(!jsonMatch) throw new Error('JSONの抽出に失敗しました');
+                const treeData = JSON.parse(jsonMatch[0]);
+
+                const rootContainer = document.getElementById('root-replies');
+                rootContainer.innerHTML = ''; 
+                
+                treeData.forEach(node => {
+                    rootContainer.insertAdjacentHTML('beforeend', buildNodeHTML(node));
+                });
+                
+                // 🌟 追加：生成されたノードに「自1」「A2」などのIDを振り直す
+                updateAllLabels();
+
+                setTimeout(() => {
+                    document.querySelectorAll('textarea').forEach(t => autoResize(t));
+                }, 100);
+
+            })
+            .catch(err => {
+                console.error(err);
+                alert('AI自動生成に失敗しました。もう一度お試しください。');
+            })
+            .finally(() => {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                btn.classList.remove('opacity-70', 'cursor-not-allowed');
+            });
+        }
+
+        // ツリーの各ノードのHTMLを再帰的に組み立てる関数
+        // 🌟 修正4：手動追加と全く同じHTMLを生成するように変更
+        function buildNodeHTML(node) {
+            let childrenHTML = '';
+            if (node.children && node.children.length > 0) {
+                node.children.forEach(child => {
+                    childrenHTML += buildNodeHTML(child);
+                });
+            }
+            
+            // AIが指定してきた値をもとに、初期状態の選択肢や色を設定
+            const s = node.speaker || 'ユーザーA';
+            const selUserA = s === 'ユーザーA' ? 'selected' : '';
+            const selUserB = s === 'ユーザーB' ? 'selected' : '';
+            const selUserC = s === 'ユーザーC' ? 'selected' : '';
+            const selSelf = s === '自分 (自)' ? 'selected' : '';
+            const selOther = s === 'その他' ? 'selected' : '';
+            const speakerColor = s === '自分 (自)' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300';
+
+            const st = node.stance || '反論';
+            const selArg = st === '主張' ? 'selected' : '';
+            const selOpp = st === '反論' ? 'selected' : '';
+            const selAgr = st === '賛成・補足' ? 'selected' : '';
+            const selQ = st === '疑問' ? 'selected' : '';
+            
+            let stanceColor = "";
+            if (st === '主張') stanceColor = 'bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-400/10 dark:text-gray-400 dark:border-gray-400/30';
+            else if (st === '反論') stanceColor = 'bg-red-100 text-red-600 border-red-200 dark:bg-red-400/10 dark:text-red-400 dark:border-red-400/30';
+            else if (st === '賛成・補足') stanceColor = 'bg-green-100 text-green-600 border-green-200 dark:bg-green-400/10 dark:text-green-400 dark:border-green-400/30';
+            else if (st === '疑問') stanceColor = 'bg-yellow-100 text-yellow-600 border-yellow-200 dark:bg-yellow-400/10 dark:text-yellow-400 dark:border-yellow-400/30';
+            else stanceColor = 'bg-red-100 text-red-600 border-red-200 dark:bg-red-400/10 dark:text-red-400 dark:border-red-400/30';
+
+            return `
+                <div class="mt-2 group relative tree-line tree-node">
+                    <div class="flex flex-col">
+                        <div class="flex items-center gap-2 mb-1">
+                            <select onchange="handleSelectChange(this)" class="speaker-select bg-transparent dark:bg-[#131314] ${speakerColor} text-sm font-bold focus:outline-none cursor-pointer">
+                                <option value="ユーザーA" class="bg-white dark:bg-[#1e1f20]" ${selUserA}>ユーザーA</option>
+                                <option value="ユーザーB" class="bg-white dark:bg-[#1e1f20]" ${selUserB}>ユーザーB</option>
+                                <option value="ユーザーC" class="bg-white dark:bg-[#1e1f20]" ${selUserC}>ユーザーC</option>
+                                <option value="自分 (自)" class="bg-white dark:bg-[#1e1f20] text-blue-600 dark:text-blue-400" ${selSelf}>自分 (自)</option>
+                                <option value="その他" class="bg-white dark:bg-[#1e1f20]" ${selOther}>その他</option>
+                            </select>
+                            
+                            <span class="speaker-id text-xs font-black text-gray-500 dark:text-gray-500 bg-gray-200 dark:bg-gray-800 px-1.5 py-0.5 rounded"></span>
+
+                            <select onchange="updateStanceColor(this)" class="stance-select text-[10px] px-1.5 py-0.5 rounded focus:outline-none cursor-pointer border ${stanceColor}">
+                                <option value="主張" class="bg-white dark:bg-[#1e1f20] text-gray-600 dark:text-gray-400" ${selArg}>主張</option>
+                                <option value="反論" class="bg-white dark:bg-[#1e1f20] text-red-600 dark:text-red-400" ${selOpp}>反論</option>
+                                <option value="賛成・補足" class="bg-white dark:bg-[#1e1f20] text-green-600 dark:text-green-400" ${selAgr}>賛成・補足</option>
+                                <option value="疑問" class="bg-white dark:bg-[#1e1f20] text-yellow-600 dark:text-yellow-400" ${selQ}>疑問</option>
+                            </select>
+
+                            <button onclick="removeNode(this)" class="ml-auto text-gray-400 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 text-xs flex items-center transition-colors px-2 py-1 rounded">
+                                <span class="text-sm mr-1 leading-none">✕</span>
+                            </button>
+                        </div>
+
+                        <textarea oninput="autoResize(this)" class="w-full bg-transparent dark:bg-[#131314] border-b border-gray-300 dark:border-gray-700 focus:border-blue-500 text-gray-900 dark:text-gray-200 text-sm py-1.5 focus:outline-none transition-colors placeholder-gray-400 dark:placeholder-gray-600" rows="1" placeholder="意見を入力...">${node.text || ''}</textarea>
+                        
+                        <button onclick="addNode(this.nextElementSibling)" class="mt-1.5 text-[11px] font-bold text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors flex items-center w-fit">
+                            <span class="mr-1 leading-none">＋</span> 返信を追加
+                        </button>
+                        
+                        <div class="replies-container ml-2 pl-3 sm:ml-2 sm:pl-4 mt-1 space-y-1">${childrenHTML}</div>
+                    </div>
+                </div>
+            `;
+        }
     </script>
 </x-app-layout>

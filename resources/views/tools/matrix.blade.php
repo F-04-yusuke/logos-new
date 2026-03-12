@@ -25,6 +25,17 @@
                         <p class="text-sm text-gray-600 dark:text-gray-400">行（評価項目）と列（パターン）を自由に追加・削除できます。◎=3点, 〇=2点, △=1点, ×=0点で下部に自動集計されます。</p>
                     </div>
 
+                    <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6 flex flex-col sm:flex-row gap-3 items-end">
+                        <div class="flex-1 w-full">
+                            <label class="block text-xs font-bold text-blue-800 dark:text-blue-300 mb-1">AIで表の土台を自動生成</label>
+                            <input type="text" id="theme-input" class="w-full bg-white dark:bg-[#131314] border border-blue-300 dark:border-blue-700 rounded text-gray-900 dark:text-gray-100 text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="比較したいテーマを入力（例：日本のエネルギー政策について）">
+                        </div>
+                        <button id="ai-generate-btn" onclick="generateWithAI()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded text-sm transition-colors shadow-sm shrink-0 flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                            AIで生成
+                        </button>
+                    </div>
+
                     <div class="bg-white dark:bg-[#1e1f20] border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm dark:shadow-lg overflow-hidden">
                         <div class="overflow-x-auto custom-scroll p-4">
                             <table class="w-full text-left border-collapse min-w-[800px]" id="matrix-table">
@@ -202,19 +213,6 @@
         }
         updateScore();
 
-        function sendAiMessage() {
-            const inputEl = document.getElementById('ai-input');
-            const chatHistory = document.getElementById('chat-history');
-            const text = inputEl.value.trim();
-            if (!text) return;
-            chatHistory.insertAdjacentHTML('beforeend', `<div class="flex gap-3 flex-row-reverse"><div class="w-8 h-8 rounded-full bg-gray-500 flex items-center justify-center shrink-0 shadow-md text-xs text-white">You</div><div class="bg-blue-600 p-3 rounded-lg rounded-tr-none text-sm text-white shadow-md max-w-[85%] whitespace-pre-wrap">${text}</div></div>`);
-            inputEl.value = ''; inputEl.style.height = 'auto'; chatHistory.scrollTop = chatHistory.scrollHeight;
-            setTimeout(() => {
-                chatHistory.insertAdjacentHTML('beforeend', `<div class="flex gap-3"><div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center shrink-0 shadow-md"><svg class="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg></div><div class="bg-gray-100 dark:bg-[#131314] p-3 rounded-lg rounded-tl-none text-sm text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-800 max-w-[85%] whitespace-pre-wrap leading-relaxed">指示: 「${text}」\n本番環境ではここに提案が返ります。</div></div>`);
-                chatHistory.scrollTop = chatHistory.scrollHeight;
-            }, 800);
-        }
-
         // 表のデータをJSON化する関数
         function buildMatrixData() {
             const data = { patterns: [], items: [] };
@@ -249,39 +247,177 @@
             return data;
         }
 
-        // データベースに送信する処理
-        function saveMatrix() {
-            const btn = document.getElementById('save-btn');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '保存中...';
-            btn.disabled = true;
+        // 本物のAIと通信して表作成のアドバイスをもらう
+        function sendAiMessage() {
+            const inputEl = document.getElementById('ai-input');
+            const chatHistory = document.getElementById('chat-history');
+            const text = inputEl.value.trim();
+            if (!text) return;
 
+            // ユーザーのメッセージを表示
+            chatHistory.insertAdjacentHTML('beforeend', `
+                <div class="flex gap-3 flex-row-reverse">
+                    <div class="w-8 h-8 rounded-full bg-gray-500 flex items-center justify-center shrink-0 shadow-md text-xs text-white">You</div>
+                    <div class="bg-blue-600 p-3 rounded-lg rounded-tr-none text-sm text-white shadow-md max-w-[85%] whitespace-pre-wrap">${text}</div>
+                </div>
+            `);
+            inputEl.value = ''; inputEl.style.height = 'auto'; chatHistory.scrollTop = chatHistory.scrollHeight;
+
+            // ローディング表示
+            const loadingId = 'loading-' + Date.now();
+            chatHistory.insertAdjacentHTML('beforeend', `
+                <div id="${loadingId}" class="flex gap-3">
+                    <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center shrink-0 shadow-md"><svg class="h-4 w-4 text-white animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg></div>
+                    <div class="bg-gray-100 dark:bg-[#131314] p-3 rounded-lg rounded-tl-none text-sm text-gray-500 border border-gray-200 dark:border-gray-800 font-bold"><span class="animate-pulse">AIが表を分析中...</span></div>
+                </div>
+            `);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+
+            // 現在の表データを取得してAIに文脈として送る
             const matrixData = buildMatrixData();
-            const title = '総合評価表 (' + new Date().toLocaleDateString() + ')';
+            const contextText = "【現在の総合評価表の構造】\n" + JSON.stringify(matrixData, null, 2);
 
-            fetch('{{ route("tools.store") }}', {
+            // Laravelバックエンドに送信
+            fetch('{{ route("tools.ai_assist") }}', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                },
-                body: JSON.stringify({
-                    title: title,
-                    type: 'matrix',
-                    data: matrixData
-                })
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                body: JSON.stringify({ prompt: text, context: contextText })
             })
             .then(response => response.json())
             .then(data => {
-                alert(data.message);
-                btn.innerHTML = originalText;
-                btn.disabled = false;
+                document.getElementById(loadingId).remove();
+                let replyText = data.reply || data.error || 'エラーが発生しました。';
+                replyText = replyText.replace(/\*\*(.*?)\*\*/g, '<span class="font-bold text-gray-900 dark:text-white">$1</span>');
+
+                chatHistory.insertAdjacentHTML('beforeend', `
+                    <div class="flex gap-3">
+                        <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center shrink-0 shadow-md"><svg class="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg></div>
+                        <div class="bg-gray-100 dark:bg-[#131314] p-3 rounded-lg rounded-tl-none text-sm text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-800 max-w-[85%] whitespace-pre-wrap leading-relaxed">${replyText}</div>
+                    </div>
+                `);
+                chatHistory.scrollTop = chatHistory.scrollHeight;
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('保存に失敗しました。');
+                document.getElementById(loadingId).remove();
+                chatHistory.insertAdjacentHTML('beforeend', `
+                    <div class="flex gap-3"><div class="w-8 h-8 rounded-full bg-red-600 flex items-center justify-center shrink-0 text-white font-bold">!</div><div class="bg-red-50 p-3 rounded-lg text-sm text-red-800 border border-red-200">通信エラーが発生しました。</div></div>
+                `);
+                chatHistory.scrollTop = chatHistory.scrollHeight;
+            });
+        }
+
+        // 🌟 追加：本物のAIと通信して表を自動生成する
+        function generateWithAI() {
+            const btn = document.getElementById('ai-generate-btn');
+            const theme = document.getElementById('theme-input').value.trim();
+            if (!theme) { alert('テーマを入力してください'); return; }
+
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<span class="animate-pulse">AIが生成中...</span>';
+            btn.disabled = true;
+            btn.classList.add('opacity-70', 'cursor-not-allowed');
+
+            const prompt = `
+                テーマ: 「${theme}」
+                このテーマについて、比較すべき2〜3の「パターン（選択肢・方針）」と、それらを評価するための3〜4の「評価項目」を挙げ、総合評価表を作成してください。
+                各セルには0〜3のスコア（3:最適, 2:良い, 1:懸念, 0:不可）と短い根拠を入れてください。
+                以下のJSON形式のみを出力してください。他のテキストは一切不要です。
+                {
+                  "patterns": [ {"title": "パターン名", "description": "概要"} ],
+                  "items": [
+                    {
+                      "title": "評価項目名",
+                      "evaluations": [ {"score": 3, "reason": "理由"} ]
+                    }
+                  ]
+                }
+            `;
+
+            fetch('{{ route("tools.ai_assist") }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                body: JSON.stringify({ prompt: prompt, context: "JSONのみ出力" })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.error) throw new Error(data.error);
+                const jsonMatch = data.reply.match(/\{[\s\S]*\}/);
+                if(!jsonMatch) throw new Error('JSONの抽出に失敗');
+                const matrixData = JSON.parse(jsonMatch[0]);
+
+                // テーブルの再構築
+                const headerRow = document.getElementById('header-row');
+                const tbody = document.getElementById('matrix-body');
+
+                // ヘッダーの初期化
+                headerRow.innerHTML = `
+                    <th class="p-3 border-b border-r border-gray-200 dark:border-gray-700 w-48 bg-gray-50 dark:bg-[#131314] align-bottom">
+                        <div class="text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">評価項目 \\ 比較パターン</div>
+                    </th>
+                    <th class="p-3 border-b border-gray-200 dark:border-gray-700 w-24 bg-gray-100 dark:bg-[#1e1f20] align-middle text-center" id="add-col-th">
+                        <button onclick="addColumn()" class="text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 rounded-lg px-2 py-4 text-xs font-bold transition-colors w-full h-full flex flex-col items-center justify-center gap-1">
+                            <span class="text-lg leading-none">＋</span><span>列を追加</span>
+                        </button>
+                    </th>
+                `;
+
+                const addColTh = document.getElementById('add-col-th');
+                matrixData.patterns.forEach(pattern => {
+                    const th = document.createElement('th');
+                    th.className = "p-3 border-b border-r border-gray-200 dark:border-gray-700 w-64 bg-gray-50 dark:bg-[#131314] align-top relative group col-pattern";
+                    th.innerHTML = `
+                        <div class="flex items-center justify-between mb-2">
+                            <input type="text" value="${pattern.title}" class="w-full bg-transparent dark:bg-[#131314] font-bold text-blue-600 dark:text-blue-400 focus:outline-none focus:border-b border-blue-500 text-sm">
+                            <button onclick="removeColumn(this)" class="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity px-1 text-xs">✕</button>
+                        </div>
+                        <textarea oninput="autoResize(this)" class="w-full bg-transparent dark:bg-[#131314] text-gray-600 dark:text-gray-400 text-xs focus:outline-none focus:border-b border-gray-300 dark:border-gray-500" rows="1">${pattern.description}</textarea>
+                    `;
+                    headerRow.insertBefore(th, addColTh);
+                });
+
+                tbody.innerHTML = '';
+                matrixData.items.forEach(item => {
+                    const tr = document.createElement('tr');
+                    tr.className = "group row-item";
+                    let cellsHTML = `
+                        <td class="p-3 border-b border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#131314] relative">
+                            <button onclick="removeRow(this)" class="absolute top-2 left-1 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity text-xs">✕</button>
+                            <input type="text" value="${item.title}" class="w-full bg-transparent dark:bg-[#131314] font-bold text-gray-900 dark:text-gray-200 focus:outline-none focus:border-b border-gray-300 dark:border-gray-500 text-sm ml-3">
+                        </td>
+                    `;
+                    item.evaluations.forEach(eval => {
+                        cellsHTML += `
+                            <td class="p-3 border-b border-r border-gray-200 dark:border-gray-700 bg-transparent hover:bg-gray-50 dark:hover:bg-[#252627] transition-colors">
+                                <div class="flex flex-col gap-2">
+                                    <select onchange="updateScore()" class="w-full bg-white dark:bg-[#131314] text-gray-900 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm focus:outline-none focus:border-blue-500 font-bold">
+                                        <option value="3" ${eval.score == 3 ? 'selected' : ''}>◎ 最適</option>
+                                        <option value="2" ${eval.score == 2 ? 'selected' : ''}>〇 良い</option>
+                                        <option value="1" ${eval.score == 1 ? 'selected' : ''}>△ 懸念あり</option>
+                                        <option value="0" ${eval.score == 0 ? 'selected' : ''}>× 不可</option>
+                                        <option value="-1" ${eval.score == -1 ? 'selected' : ''}>-- 評価 --</option>
+                                    </select>
+                                    <textarea oninput="autoResize(this)" class="w-full bg-transparent dark:bg-[#1e1f20] border-none text-gray-600 dark:text-gray-300 text-xs focus:outline-none focus:ring-1 focus:ring-gray-300 dark:focus:ring-gray-600 rounded p-1" rows="2">${eval.reason || ''}</textarea>
+                                </div>
+                            </td>
+                        `;
+                    });
+                    tr.innerHTML = cellsHTML;
+                    tbody.appendChild(tr);
+                });
+
+                updateScore();
+                setTimeout(() => document.querySelectorAll('textarea').forEach(t => autoResize(t)), 100);
+
+            })
+            .catch(err => {
+                console.error(err);
+                alert('AI自動生成に失敗しました。もう一度お試しください。');
+            })
+            .finally(() => {
                 btn.innerHTML = originalText;
                 btn.disabled = false;
+                btn.classList.remove('opacity-70', 'cursor-not-allowed');
             });
         }
     </script>

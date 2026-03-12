@@ -30,6 +30,30 @@
             </div>
 
             @if($analysis->type === 'tree')
+                @php
+                    $treeData = $analysis->data;
+                    $nodes = $treeData['nodes'] ?? $treeData; // 新構造ならnodes、旧構造ならそのまま
+                    $meta = $treeData['meta'] ?? null;
+                @endphp
+
+                @if($meta && (!empty($meta['url']) || !empty($meta['description'])))
+                    <div class="bg-white dark:bg-[#1e1f20] p-6 shadow-sm sm:rounded-lg border border-gray-200 dark:border-gray-800 mb-6">
+                        <h3 class="font-bold text-gray-900 dark:text-gray-100 flex items-center mb-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1.5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            事前情報
+                        </h3>
+                        @if(!empty($meta['description']))
+                            <p class="text-sm text-gray-700 dark:text-gray-300 mb-2 whitespace-pre-wrap">{{ $meta['description'] }}</p>
+                        @endif
+                        @if(!empty($meta['url']))
+                            <a href="{{ $meta['url'] }}" target="_blank" class="text-sm text-blue-500 hover:underline flex items-center break-all">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+                                {{ $meta['url'] }}
+                            </a>
+                        @endif
+                    </div>
+                @endif
+
                 <div class="bg-white dark:bg-[#1e1f20] p-6 shadow-sm sm:rounded-lg border border-gray-200 dark:border-gray-800 overflow-x-auto">
                     <style>
                         .tree-line::before { content: ''; position: absolute; top: 0; bottom: 0; left: -1rem; width: 2px; background-color: #374151; border-radius: 2px; }
@@ -39,7 +63,7 @@
                 </div>
 
                 <script>
-                    const treeData = @json($analysis->data);
+                    const treeData = @json($nodes);
                     
                     function getStanceStyle(stance) {
                         if(stance === '反論') return 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800';
@@ -52,7 +76,6 @@
                         const el = document.createElement('div');
                         el.className = "mt-4 relative tree-line ml-8";
                         
-                        // 話者の色分け
                         const isSelf = node.speaker.includes('自');
                         const speakerColor = isSelf ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300';
                         

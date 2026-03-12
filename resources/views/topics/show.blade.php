@@ -316,24 +316,28 @@
                     @else
                         <div class="space-y-3">
                             @foreach($topicAnalyses as $analysis)
-                                <div class="p-4 bg-white dark:bg-[#1e1f20] rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm transition-colors">
+                                <div class="p-4 bg-white dark:bg-[#1e1f20] rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm transition-colors flex flex-col gap-3">
                                     
-                                    <div class="flex justify-between items-center mb-3">
-                                        <div class="flex items-center gap-2">
-                                            <span class="font-bold text-sm text-gray-900 dark:text-gray-100">{{ $analysis->user->name }}</span>
-                                            @if($analysis->type === 'tree') <span class="text-[9px] font-bold bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-400 px-1.5 py-0.5 rounded">ロジックツリー</span>
-                                            @elseif($analysis->type === 'matrix') <span class="text-[9px] font-bold bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-400 px-1.5 py-0.5 rounded">総合評価表</span>
-                                            @elseif($analysis->type === 'swot') <span class="text-[9px] font-bold bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-400 px-1.5 py-0.5 rounded">SWOT分析</span>
+                                    <div class="flex justify-between items-start mb-1">
+                                        <div class="flex items-center gap-2 mt-1">
+                                            @if($analysis->type === 'tree') <span class="inline-block px-2 py-0.5 text-xs font-bold rounded border border-blue-200 text-blue-600 dark:border-blue-800 dark:text-blue-400">ロジックツリー</span>
+                                            @elseif($analysis->type === 'matrix') <span class="inline-block px-2 py-0.5 text-xs font-bold rounded border border-purple-200 text-purple-600 dark:border-purple-800 dark:text-purple-400">総合評価表</span>
+                                            @elseif($analysis->type === 'swot') <span class="inline-block px-2 py-0.5 text-xs font-bold rounded border border-green-200 text-green-600 dark:border-green-800 dark:text-green-400">SWOT分析</span>
                                             @endif
                                         </div>
-                                        <span class="text-xs text-gray-500">{{ $analysis->created_at->format('Y-m-d H:i') }}</span>
+                                        <div class="text-right text-xs text-gray-500 dark:text-gray-400">
+                                            <span class="font-medium text-gray-700 dark:text-gray-300">{{ $analysis->user->name }}</span><br>
+                                            <span>{{ $analysis->created_at->format('Y-m-d H:i') }}</span>
+                                        </div>
                                     </div>
 
-                                    <h4 class="font-bold text-base text-gray-900 dark:text-gray-100 mb-3">{{ $analysis->title }}</h4>
-
-                                    <div class="rounded-md border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#131314] p-4 text-sm mb-4 overflow-hidden w-full" style="max-height: 400px; -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent 100%); mask-image: linear-gradient(to bottom, black 80%, transparent 100%);">
+                                    <div class="rounded-md border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#131314] p-4 text-sm overflow-hidden w-full flex-1" style="max-height: 400px; -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent 100%); mask-image: linear-gradient(to bottom, black 80%, transparent 100%);">
                                         
                                         @php $previewData = $analysis->data; @endphp
+                                        
+                                        @if($analysis->type === 'swot')
+                                            <div class="font-bold text-base text-gray-900 dark:text-gray-100 mb-4 pb-2 border-b border-gray-200 dark:border-gray-800">{{ $analysis->title }}</div>
+                                        @endif
                                         
                                         @if($analysis->type === 'tree' && !empty($previewData))
                                             @php 
@@ -342,8 +346,8 @@
                                             @endphp
                                             
                                             @if($meta && (!empty($meta['url']) || !empty($meta['description'])))
-                                                <div class="mb-4 p-3 bg-white dark:bg-[#1e1f20] rounded border border-gray-200 dark:border-gray-700">
-                                                    <div class="text-[10px] font-bold text-blue-600 dark:text-blue-400 mb-1">事前情報</div>
+                                                <div class="mb-4 p-3 bg-white dark:bg-[#1e1f20] rounded border border-gray-200 dark:border-gray-700 shadow-sm">
+                                                    <div class="text-[10px] font-bold text-blue-600 dark:text-blue-400 mb-1 flex items-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>事前情報</div>
                                                     @if(!empty($meta['description'])) <p class="text-xs text-gray-800 dark:text-gray-300 mb-1.5">{{ $meta['description'] }}</p> @endif
                                                     @if(!empty($meta['url'])) <a href="{{ $meta['url'] }}" target="_blank" class="text-xs text-blue-500 hover:underline truncate block">{{ $meta['url'] }}</a> @endif
                                                 </div>
@@ -404,14 +408,22 @@
                                         @endif
                                     </div>
 
-                                    <div class="flex items-center justify-between mt-auto">
-                                        <button type="button" class="flex items-center space-x-1 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6.633 10.25c.806 0 1.533-.446 2.031-1.08a9.041 9.041 0 0 1 2.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 0 0 .322-1.672V2.75a.75.75 0 0 1 .75-.75 2.25 2.25 0 0 1 1.5.58c.36.31.6.76.68 1.25.04.24.06.49.06.75 0 .76-.23 1.48-.63 2.08-.2.31-.05.73.3.88l3.126.33a2.25 2.25 0 0 1 1.954 2.65l-1.42 6.75c-.24 1.14-1.28 1.96-2.45 1.96H13.5a5.5 5.5 0 0 1-2.5-.6l-3.11-1.42a4.5 4.5 0 0 0-1.43-.24H5.9c-.83 0-1.5-.67-1.5-1.5V11.75c0-.83.67-1.5 1.5-1.5h.733Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 10.25h1.5v9h-1.5v-9Z" /></svg>
-                                            <span class="text-sm">0</span>
-                                        </button>
+                                    <div class="mt-1 flex items-center justify-between">
                                         <a href="{{ route('analyses.show', $analysis) }}" class="text-xs font-bold text-blue-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex items-center">
-                                            図解を詳しく見る <span class="ml-1 text-[10px]">▶</span>
+                                            もっと見る <span class="ml-1 text-[10px]">▶</span>
                                         </a>
+
+                                        <div class="flex items-center gap-3">
+                                            @if ($analysis->user_id === auth()->id())
+                                                <button type="button" onclick="alert('削除機能は準備中です')" class="text-xs text-red-400 hover:text-red-600 transition-colors">削除</button>
+                                                <span class="text-gray-300 dark:text-gray-700">|</span>
+                                            @endif
+                                            
+                                            <button type="button" class="flex items-center space-x-1 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M6.633 10.25c.806 0 1.533-.446 2.031-1.08a9.041 9.041 0 0 1 2.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 0 0 .322-1.672V2.75a.75.75 0 0 1 .75-.75 2.25 2.25 0 0 1 1.5.58c.36.31.6.76.68 1.25.04.24.06.49.06.75 0 .76-.23 1.48-.63 2.08-.2.31-.05.73.3.88l3.126.33a2.25 2.25 0 0 1 1.954 2.65l-1.42 6.75c-.24 1.14-1.28 1.96-2.45 1.96H13.5a5.5 5.5 0 0 1-2.5-.6l-3.11-1.42a4.5 4.5 0 0 0-1.43-.24H5.9c-.83 0-1.5-.67-1.5-1.5V11.75c0-.83.67-1.5 1.5-1.5h.733Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 10.25h1.5v9h-1.5v-9Z" /></svg>
+                                                <span class="text-sm">0</span>
+                                            </button>
+                                        </div>
                                     </div>
 
                                 </div>
