@@ -6,173 +6,150 @@
     </x-slot>
 
     <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <div x-data="{ activeTab: 'posts' }" class="bg-white dark:bg-[#1e1f20] shadow-sm sm:rounded-lg overflow-hidden border border-gray-200 dark:border-gray-800">
+                
+                <div class="flex border-b border-gray-200 dark:border-gray-800 overflow-x-auto">
+                    <button @click="activeTab = 'posts'" :class="{ 'border-blue-500 text-blue-600 dark:text-blue-400 font-bold': activeTab === 'posts', 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300': activeTab !== 'posts' }" class="py-3 px-6 border-b-2 text-sm transition-colors focus:outline-none whitespace-nowrap">投稿した情報</button>
+                    <button @click="activeTab = 'comments'" :class="{ 'border-blue-500 text-blue-600 dark:text-blue-400 font-bold': activeTab === 'comments', 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300': activeTab !== 'comments' }" class="py-3 px-6 border-b-2 text-sm transition-colors focus:outline-none whitespace-nowrap">自分のコメント</button>
+                    <button @click="activeTab = 'topics'" :class="{ 'border-blue-500 text-blue-600 dark:text-blue-400 font-bold': activeTab === 'topics', 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300': activeTab !== 'topics' }" class="py-3 px-6 border-b-2 text-sm transition-colors focus:outline-none whitespace-nowrap flex items-center">
+                        作成したトピック
+                        <span class="ml-1 text-[9px] bg-yellow-500 text-white px-1 py-0.5 rounded font-black tracking-wider">PRO</span>
+                    </button>
+                    <button @click="activeTab = 'analyses'" :class="{ 'border-yellow-500 text-yellow-600 dark:text-yellow-500 font-bold': activeTab === 'analyses', 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300': activeTab !== 'analyses' }" class="py-3 px-6 border-b-2 text-sm transition-colors focus:outline-none whitespace-nowrap flex items-center">
+                        作成した分析・図解
+                        <span class="ml-1 text-[9px] bg-yellow-500 text-white px-1 py-0.5 rounded font-black tracking-wider">PRO</span>
+                    </button>
+                </div>
 
-            <div class="p-4 sm:p-8 bg-white dark:bg-[#1e1f20] shadow sm:rounded-lg border border-gray-200 dark:border-gray-800">
-                <section>
-                    <header>
-                        <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100 flex items-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
-                            自分が作成したトピック
-                        </h2>
-                    </header>
-                    <div class="mt-6 space-y-3">
-                        @if ($myTopics->isEmpty())
-                        <div class="text-center py-6 bg-gray-50 dark:bg-[#131314] rounded-lg border border-gray-200 dark:border-gray-800">
-                            <p class="text-sm text-gray-500 dark:text-gray-400">まだ作成したトピックはありません。</p>
-                        </div>
-                        @else
-                        @foreach ($myTopics as $topic)
-                        <div class="p-4 border border-gray-200 dark:border-gray-800 rounded-lg bg-gray-50 dark:bg-[#131314] flex flex-col sm:flex-row justify-between sm:items-center gap-4 transition-colors">
-                            <div>
-                                <a href="{{ route('topics.show', $topic) }}" class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:underline font-bold text-base transition-colors">{{ $topic->title }}</a>
-                                <p class="text-[10px] text-gray-500 dark:text-gray-500 mt-1">作成日: {{ $topic->created_at->format('Y-m-d H:i') }}</p>
-                            </div>
-                            <div class="flex space-x-3 shrink-0">
-                                <a href="{{ route('topics.edit', $topic) }}" class="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors">編集</a>
-                                <span class="text-gray-300 dark:text-gray-700">|</span>
-                                <form method="POST" action="{{ route('topics.destroy', $topic) }}" onsubmit="return confirm('本当に削除しますか？');" class="m-0 p-0">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="text-xs text-red-400 hover:text-red-600 transition-colors">削除</button>
-                                </form>
-                            </div>
-                        </div>
-                        @endforeach
-                        @endif
-                    </div>
-                </section>
-            </div>
-
-            <div class="p-4 sm:p-8 bg-white dark:bg-[#1e1f20] shadow sm:rounded-lg border border-gray-200 dark:border-gray-800">
-                <section>
-                    <header>
-                        <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100 flex items-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
-                            自分が投稿したエビデンス
-                        </h2>
-                    </header>
-                    <div class="mt-6 space-y-3">
-                        @if ($myPosts->isEmpty())
-                        <div class="text-center py-6 bg-gray-50 dark:bg-[#131314] rounded-lg border border-gray-200 dark:border-gray-800">
-                            <p class="text-sm text-gray-500 dark:text-gray-400">まだ投稿したエビデンスはありません。</p>
-                        </div>
-                        @else
-                        @foreach ($myPosts as $post)
-                        <div class="p-4 bg-gray-50 dark:bg-[#131314] rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col transition-colors">
-                            
-                            <div class="flex justify-between items-start mb-2">
-                                <span class="inline-block px-2 py-0.5 text-xs rounded border border-gray-200 text-gray-600 dark:border-gray-700 dark:text-gray-400">{{ $post->category }}</span>
-                                <div class="text-right text-[10px] text-gray-500 dark:text-gray-500">
-                                    <span>{{ $post->created_at->format('Y-m-d H:i') }}</span>
-                                </div>
-                            </div>
-                            
-                            <a href="{{ $post->url }}" target="_blank" class="block font-bold text-sm text-gray-900 dark:text-gray-100 hover:text-blue-500 dark:hover:text-blue-400 mb-2 truncate transition-colors">{{ $post->url }}</a>
-                            
-                            @if ($post->comment)
-                            <div class="text-gray-800 dark:text-gray-300 text-sm whitespace-pre-wrap mt-1 bg-white dark:bg-[#1e1f20] p-3 rounded border border-gray-200 dark:border-gray-800">{{ $post->comment }}</div>
-                            @endif
-
-                            <div class="mt-3 text-[10px] text-gray-500 dark:text-gray-400">
-                                連携先トピック: <a href="{{ route('topics.show', $post->topic) }}" class="text-blue-500 hover:text-blue-400 hover:underline transition-colors">{{ $post->topic->title }}</a>
-                            </div>
-                            
-                            <div class="mt-3 flex items-center justify-end gap-3 border-t border-gray-200 dark:border-gray-800 pt-3">
-                                <a href="{{ route('posts.edit', $post) }}" class="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors">編集</a>
-                                <span class="text-gray-300 dark:text-gray-700">|</span>
-                                <form method="POST" action="{{ route('posts.destroy', $post) }}" onsubmit="return confirm('削除しますか？');" class="m-0 p-0">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="text-xs text-red-400 hover:text-red-600 transition-colors">削除</button>
-                                </form>
-                            </div>
-                        </div>
-                        @endforeach
-                        @endif
-                    </div>
-                </section>
-            </div>
-
-            <div class="p-4 sm:p-8 bg-white dark:bg-[#1e1f20] shadow sm:rounded-lg border border-gray-200 dark:border-gray-800">
-                <section>
-                    <header>
-                        <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100 flex items-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-                            作成した分析・図解
-                            <span class="ml-2 text-[10px] bg-yellow-500 text-white dark:bg-yellow-500/20 dark:text-yellow-500 px-1.5 py-0.5 rounded font-black tracking-wider border border-transparent dark:border-yellow-500/30">PRO</span>
-                        </h2>
-                        <p class="mt-1 text-xs text-gray-600 dark:text-gray-400">
-                            ツールで保存したデータ一覧です。トピック詳細画面の「分析・図解」タブから連携（公開）できます。
-                        </p>
-                    </header>
-
-                    @php
-                    $myAnalyses = \App\Models\Analysis::where('user_id', auth()->id())->latest()->get();
-                    @endphp
-
-                    <div class="mt-6 space-y-4">
-                        @if ($myAnalyses->isEmpty())
-                        <div class="text-center py-6 bg-gray-50 dark:bg-[#131314] rounded-lg border border-gray-200 dark:border-gray-800">
-                            <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">まだ保存された分析・図解はありません。</p>
-                            <a href="{{ route('tools.tree') }}" class="inline-block mt-2 text-xs text-blue-500 hover:text-blue-600 font-bold transition-colors">＋ ツールを使ってみる</a>
-                        </div>
-                        @else
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            @foreach ($myAnalyses as $analysis)
-                            <div class="p-4 border border-gray-200 dark:border-gray-800 rounded-lg bg-gray-50 dark:bg-[#131314] flex flex-col justify-between hover:border-gray-300 dark:hover:border-gray-600 transition-colors">
-                                <div>
-                                    <div class="flex justify-between items-start mb-2">
-                                        <div class="flex items-center gap-2">
-                                            @if($analysis->type === 'tree') <span class="text-[10px] font-bold bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-400 px-2 py-0.5 rounded border border-transparent dark:border-blue-800/50">ロジックツリー</span>
-                                            @elseif($analysis->type === 'matrix') <span class="text-[10px] font-bold bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-400 px-2 py-0.5 rounded border border-transparent dark:border-purple-800/50">総合評価表</span>
-                                            @elseif($analysis->type === 'swot')
-                                            @php $isPest = isset($analysis->data['framework']) && $analysis->data['framework'] === 'PEST'; @endphp
-                                            <span class="text-[10px] font-bold bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-400 px-2 py-0.5 rounded border border-transparent dark:border-green-800/50">{{ $isPest ? 'PEST分析' : 'SWOT分析' }}</span>
-                                            @endif
-                                        </div>
-
-                                        @if($analysis->is_published)
-                                        <span class="text-[10px] border border-green-500 text-green-600 dark:text-green-400 px-1.5 py-0.5 rounded whitespace-nowrap">公開中</span>
+                <div class="p-6">
+                    
+                    <div x-show="activeTab === 'posts'" x-cloak class="space-y-4">
+                        @forelse(auth()->user()->posts()->latest()->get() as $post)
+                            <div class="p-3 bg-white dark:bg-[#131314] rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm flex flex-col md:flex-row gap-3">
+                                <div class="md:w-1/4 flex-shrink-0">
+                                    <a href="{{ $post->url }}" target="_blank" class="block group">
+                                        @if($post->thumbnail_url)
+                                            <div class="w-full aspect-video rounded-md overflow-hidden mb-2 bg-gray-100 dark:bg-gray-800">
+                                                <img src="{{ $post->thumbnail_url }}" alt="サムネイル" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                                            </div>
                                         @else
-                                        <span class="text-[10px] border border-gray-400 text-gray-500 dark:text-gray-400 px-1.5 py-0.5 rounded whitespace-nowrap">下書き</span>
+                                            <div class="w-full aspect-video bg-gray-100 dark:bg-[#1e1f20] rounded-md mb-2 flex flex-col items-center justify-center text-gray-400 border border-gray-200 dark:border-gray-700">
+                                                <span class="text-xs">No Image</span>
+                                            </div>
+                                        @endif
+                                        <h4 class="font-bold text-sm text-gray-900 dark:text-gray-100 group-hover:text-blue-500 line-clamp-2">{{ $post->title ?: 'タイトルなし' }}</h4>
+                                    </a>
+                                </div>
+                                <div class="md:w-3/4 flex flex-col justify-between">
+                                    <div>
+                                        <div class="flex justify-between items-start mb-2">
+                                            <span class="inline-block px-2 py-0.5 text-xs rounded border border-gray-200 text-gray-600 dark:border-gray-700 dark:text-gray-400">{{ $post->category }}</span>
+                                            <div class="text-right text-xs text-gray-500"><span>{{ $post->created_at->format('Y-m-d H:i') }}</span></div>
+                                        </div>
+                                        <p class="text-xs text-gray-400 mb-1">連携先トピック: <a href="{{ route('topics.show', $post->topic_id) }}" class="text-blue-500 hover:underline">{{ $post->topic->title }}</a></p>
+                                        @if ($post->comment)
+                                            <div class="text-gray-800 dark:text-gray-300 text-sm whitespace-pre-wrap mt-1 bg-gray-50 dark:bg-[#1e1f20] p-2 rounded">{{ $post->comment }}</div>
                                         @endif
                                     </div>
-
-                                    <a href="{{ route('analyses.show', $analysis) }}" class="font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm sm:text-base line-clamp-2 transition-colors hover:underline">
-                                        {{ $analysis->title }}
-                                    </a>
-
-                                    @if($analysis->topic_id)
-                                    <p class="text-[10px] text-gray-500 dark:text-gray-400 mt-1.5 truncate">
-                                        連携先: <a href="{{ route('topics.show', $analysis->topic_id) }}" class="text-blue-500 hover:text-blue-400 hover:underline transition-colors">{{ $analysis->topic->title }}</a>
-                                    </p>
-                                    @endif
-                                </div>
-
-                                <div class="mt-4 flex justify-between items-center border-t border-gray-200 dark:border-gray-800 pt-3">
-                                    <span class="text-[10px] text-gray-400 dark:text-gray-500">{{ $analysis->created_at->format('Y-m-d H:i') }}</span>
-
-                                    <div class="flex space-x-3">
-                                        <button type="button" onclick="alert('分析・図解の再編集機能は現在開発中です。\n※将来的にはここからツール画面に戻ってAIと続きができるようになります。')" class="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors">
-                                            編集
-                                        </button>
-                                        <span class="text-gray-300 dark:text-gray-700">|</span>
-                                        <form method="POST" action="{{ route('analyses.destroy', $analysis) }}" onsubmit="return confirm('本当に削除しますか？');" class="m-0 p-0">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="text-xs text-red-400 hover:text-red-600 transition-colors">削除</button>
+                                    <div class="mt-3 flex items-center justify-end gap-3">
+                                        <a href="{{ route('posts.edit', $post) }}" class="text-xs text-blue-500 hover:text-blue-700">編集</a>
+                                        <form method="POST" action="{{ route('posts.destroy', $post) }}" onsubmit="return confirm('本当に削除しますか？');" class="m-0 p-0">
+                                            @csrf @method('DELETE')
+                                            <button type="submit" class="text-xs text-red-400 hover:text-red-600">削除</button>
                                         </form>
                                     </div>
                                 </div>
                             </div>
-                            @endforeach
-                        </div>
-                        @endif
+                        @empty
+                            <p class="text-gray-500 text-sm">まだ投稿した情報はありません。</p>
+                        @endforelse
                     </div>
-                </section>
-            </div>
 
+                    <div x-show="activeTab === 'comments'" x-cloak class="space-y-3">
+                        @forelse(auth()->user()->comments()->latest()->get() as $comment)
+                            <div class="p-4 bg-gray-50 dark:bg-[#131314] rounded-lg border border-gray-200 dark:border-gray-800">
+                                <div class="flex justify-between items-center mb-2">
+                                    <p class="text-xs text-gray-500">
+                                        トピック: <a href="{{ route('topics.show', $comment->topic_id) }}" class="text-blue-500 hover:underline font-bold">{{ $comment->topic->title }}</a>
+                                    </p>
+                                    <span class="text-xs text-gray-500">{{ $comment->created_at->format('Y-m-d H:i') }}</span>
+                                </div>
+                                @if($comment->parent_id)
+                                    <div class="text-[10px] text-gray-400 mb-1 flex items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1 transform rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" /></svg>
+                                        {{ $comment->parent->user->name ?? '誰か' }} への返信
+                                    </div>
+                                @endif
+                                <p class="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap">{{ $comment->body }}</p>
+                            </div>
+                        @empty
+                            <p class="text-gray-500 text-sm">まだコメントしていません。</p>
+                        @endforelse
+                    </div>
+
+                    <div x-show="activeTab === 'topics'" x-cloak class="space-y-3">
+                        @forelse(auth()->user()->topics()->latest()->get() as $topic)
+                            <div class="p-4 bg-white dark:bg-[#131314] rounded-lg border border-gray-200 dark:border-gray-800 flex justify-between items-center">
+                                <div>
+                                    <a href="{{ route('topics.show', $topic) }}" class="font-bold text-blue-500 hover:underline">{{ $topic->title }}</a>
+                                    <p class="text-xs text-gray-500 mt-1">作成日: {{ $topic->created_at->format('Y-m-d H:i') }}</p>
+                                </div>
+                                <div class="flex items-center gap-3 shrink-0">
+                                    <a href="{{ route('topics.edit', $topic) }}" class="text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">編集</a>
+                                    <span class="text-gray-300 dark:text-gray-700">|</span>
+                                    <form method="POST" action="{{ route('topics.destroy', $topic) }}" onsubmit="return confirm('本当に削除しますか？');" class="m-0 p-0">
+                                        @csrf @method('DELETE')
+                                        <button type="submit" class="text-xs text-red-400 hover:text-red-600">削除</button>
+                                    </form>
+                                </div>
+                            </div>
+                        @empty
+                            <p class="text-gray-500 text-sm">まだ作成したトピックはありません。</p>
+                        @endforelse
+                    </div>
+
+                    <div x-show="activeTab === 'analyses'" x-cloak class="space-y-3">
+                        @forelse(auth()->user()->analyses()->latest()->get() as $analysis)
+                            <div class="p-4 bg-gray-50 dark:bg-[#131314] rounded-lg border border-gray-200 dark:border-gray-800 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <span class="text-[10px] font-bold px-2 py-0.5 rounded border border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-400">{{ $analysis->type }}</span>
+                                        <span class="font-bold text-gray-800 dark:text-gray-200 text-sm">{{ $analysis->title }}</span>
+                                    </div>
+                                    @if($analysis->topic_id)
+                                        <p class="text-xs text-gray-500 mb-1">公開先トピック: <a href="{{ route('topics.show', $analysis->topic_id) }}" class="text-blue-500 hover:underline">{{ $analysis->topic->title }}</a></p>
+                                    @else
+                                        <p class="text-xs text-yellow-600 dark:text-yellow-500 font-bold mb-1">未公開（下書き）</p>
+                                    @endif
+                                    
+                                    @if($analysis->supplement)
+                                        <div class="mt-2 text-xs text-gray-600 dark:text-gray-400 bg-white dark:bg-[#1e1f20] p-2 rounded border border-gray-200 dark:border-gray-700">
+                                            <span class="font-bold text-yellow-600 dark:text-yellow-500">補足:</span> {{ Str::limit($analysis->supplement, 50) }}
+                                        </div>
+                                    @endif
+                                </div>
+
+                                <div class="flex items-center gap-3 shrink-0">
+                                    @if($analysis->topic_id)
+                                        <a href="{{ route('analyses.show', $analysis) }}" class="text-xs font-bold text-blue-500 hover:text-blue-700">見る</a>
+                                    @else
+                                        <a href="{{ route('analyses.edit', $analysis) }}" class="text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">編集</a>
+                                    @endif
+                                    <span class="text-gray-300 dark:text-gray-700">|</span>
+                                    <form method="POST" action="{{ route('analyses.destroy', $analysis) }}" onsubmit="return confirm('本当に削除しますか？');" class="m-0 p-0">
+                                        @csrf @method('DELETE')
+                                        <button type="submit" class="text-xs text-red-400 hover:text-red-600">削除</button>
+                                    </form>
+                                </div>
+                            </div>
+                        @empty
+                            <p class="text-gray-500 text-sm">まだ作成した分析・図解はありません。</p>
+                        @endforelse
+                    </div>
+
+                </div>
+            </div>
         </div>
     </div>
 </x-app-layout>

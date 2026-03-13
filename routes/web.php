@@ -107,6 +107,9 @@ Route::middleware('auth')->prefix('tools')->name('tools.')->group(function () {
 // 分析・図解 (閲覧用)
 Route::middleware('auth')->group(function () {
     Route::get('/analyses/{analysis}', [App\Http\Controllers\AnalysisController::class, 'show'])->name('analyses.show');
+    // 分析・図解ツールの編集画面と更新処理
+    Route::get('/analyses/{analysis}/edit', [\App\Http\Controllers\AnalysisController::class, 'edit'])->name('analyses.edit');
+    Route::patch('/analyses/{analysis}', [\App\Http\Controllers\AnalysisController::class, 'update'])->name('analyses.update');
 });
 // 分析・図解の削除ルート
 Route::delete('/analyses/{analysis}', [\App\Http\Controllers\AnalysisController::class, 'destroy'])->name('analyses.destroy');

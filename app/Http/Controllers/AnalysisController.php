@@ -137,4 +137,35 @@ class AnalysisController extends Controller
 
         return back(); // 元の画面に戻る
     }
+
+    // 分析・図解の編集画面を表示する
+    public function edit(\App\Models\Analysis $analysis)
+    {
+        // 他人のデータは編集できないようにブロック
+        if ($analysis->user_id !== auth()->id()) {
+            abort(403, '権限がありません。');
+        }
+
+        return view('analyses.edit', compact('analysis'));
+    }
+
+    // 分析・図解のタイトルを更新する
+    public function update(\Illuminate\Http\Request $request, \App\Models\Analysis $analysis)
+    {
+        if ($analysis->user_id !== auth()->id()) {
+            abort(403, '権限がありません。');
+        }
+
+        // タイトルのみ入力チェック
+        $request->validate([
+            'title' => 'required|string|max:255',
+        ]);
+
+        // データベースを更新
+        $analysis->update([
+            'title' => $request->title,
+        ]);
+
+        return redirect()->route('dashboard')->with('status', '分析・図解のタイトルを更新しました。');
+    }
 }
