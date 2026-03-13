@@ -30,13 +30,9 @@
                                 <div class="md:w-1/4 flex-shrink-0">
                                     <a href="{{ $post->url }}" target="_blank" class="block group">
                                         @if($post->thumbnail_url)
-                                            <div class="w-full aspect-video rounded-md overflow-hidden mb-2 bg-gray-100 dark:bg-gray-800">
-                                                <img src="{{ $post->thumbnail_url }}" alt="サムネイル" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
-                                            </div>
+                                            <div class="w-full aspect-video rounded-md overflow-hidden mb-2 bg-gray-100 dark:bg-gray-800"><img src="{{ $post->thumbnail_url }}" alt="サムネイル" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"></div>
                                         @else
-                                            <div class="w-full aspect-video bg-gray-100 dark:bg-[#1e1f20] rounded-md mb-2 flex flex-col items-center justify-center text-gray-400 border border-gray-200 dark:border-gray-700">
-                                                <span class="text-xs">No Image</span>
-                                            </div>
+                                            <div class="w-full aspect-video bg-gray-100 dark:bg-[#1e1f20] rounded-md mb-2 flex flex-col items-center justify-center text-gray-400 border border-gray-200 dark:border-gray-700"><span class="text-xs">No Image</span></div>
                                         @endif
                                         <h4 class="font-bold text-sm text-gray-900 dark:text-gray-100 group-hover:text-blue-500 line-clamp-2">{{ $post->title ?: 'タイトルなし' }}</h4>
                                     </a>
@@ -47,17 +43,24 @@
                                             <span class="inline-block px-2 py-0.5 text-xs rounded border border-gray-200 text-gray-600 dark:border-gray-700 dark:text-gray-400">{{ $post->category }}</span>
                                             <div class="text-right text-xs text-gray-500"><span>{{ $post->created_at->format('Y-m-d H:i') }}</span></div>
                                         </div>
-                                        <p class="text-xs text-gray-400 mb-1">連携先トピック: <a href="{{ route('topics.show', $post->topic_id) }}" class="text-blue-500 hover:underline">{{ $post->topic->title }}</a></p>
+                                        <p class="text-xs text-gray-400 mb-1">トピック: <a href="{{ route('topics.show', $post->topic_id) }}" class="text-blue-500 hover:underline">{{ $post->topic->title }}</a></p>
                                         @if ($post->comment)
                                             <div class="text-gray-800 dark:text-gray-300 text-sm whitespace-pre-wrap mt-1 bg-gray-50 dark:bg-[#1e1f20] p-2 rounded">{{ $post->comment }}</div>
                                         @endif
+                                        
+                                        @if($post->supplement)
+                                            <div class="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-800/50 text-sm">
+                                                <span class="font-bold text-blue-600 dark:text-blue-400 text-[10px] block mb-1">✅ 投稿者からの補足</span>
+                                                <p class="text-gray-800 dark:text-gray-200 whitespace-pre-wrap">{{ $post->supplement }}</p>
+                                            </div>
+                                        @endif
                                     </div>
-                                    <div class="mt-3 flex items-center justify-end gap-3">
-                                        <a href="{{ route('posts.edit', $post) }}" class="text-xs text-blue-500 hover:text-blue-700">編集</a>
-                                        <form method="POST" action="{{ route('posts.destroy', $post) }}" onsubmit="return confirm('本当に削除しますか？');" class="m-0 p-0">
-                                            @csrf @method('DELETE')
-                                            <button type="submit" class="text-xs text-red-400 hover:text-red-600">削除</button>
-                                        </form>
+                                    <div class="mt-3 flex items-center justify-between">
+                                        <div class="flex items-center text-gray-500 dark:text-gray-400">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 mr-1"><path d="M7.493 18.5c-.425 0-.82-.236-.975-.632A7.48 7.48 0 0 1 6 15.125c0-1.75.599-3.358 1.602-4.634.151-.192.373-.309.6-.397.473-.183.89-.514 1.212-.924a9.042 9.042 0 0 1 2.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 0 0 .322-1.672V2.75A.75.75 0 0 1 15 2a2.25 2.25 0 0 1 2.25 2.25c0 1.152-.26 2.243-.723 3.218-.266.558.107 1.282.725 1.282h3.126c1.026 0 1.945.694 2.054 1.715.045.422.067.85.067 1.285a11.2 11.2 0 0 1-2.649 7.324C18.784 19.38 17.06 20 15.25 20h-4.735a7.22 7.22 0 0 1-3.022-.662Z" /><path d="M1.5 8.625c0-1.036.84-1.875 1.875-1.875h1.5A1.875 1.875 0 0 1 6.75 8.625v10.5a1.875 1.875 0 0 1-1.875 1.875h-1.5A1.875 1.875 0 0 1 1.5 19.125v-10.5Z" /></svg>
+                                            <span class="text-xs font-bold">{{ $post->likes()->count() ?? 0 }}</span>
+                                        </div>
+                                        <form method="POST" action="{{ route('posts.destroy', $post) }}" onsubmit="return confirm('削除しますか？');" class="m-0 p-0">@csrf @method('DELETE')<button type="submit" class="text-xs text-red-400 hover:text-red-600">削除</button></form>
                                     </div>
                                 </div>
                             </div>
@@ -66,22 +69,46 @@
                         @endforelse
                     </div>
 
-                    <div x-show="activeTab === 'comments'" x-cloak class="space-y-3">
-                        @forelse(auth()->user()->comments()->latest()->get() as $comment)
-                            <div class="p-4 bg-gray-50 dark:bg-[#131314] rounded-lg border border-gray-200 dark:border-gray-800">
-                                <div class="flex justify-between items-center mb-2">
-                                    <p class="text-xs text-gray-500">
-                                        トピック: <a href="{{ route('topics.show', $comment->topic_id) }}" class="text-blue-500 hover:underline font-bold">{{ $comment->topic->title }}</a>
-                                    </p>
+                    <div x-show="activeTab === 'comments'" x-cloak class="space-y-4">
+                        @forelse(auth()->user()->comments()->whereNull('parent_id')->with(['replies' => function($q) { $q->oldest(); }])->latest()->get() as $comment)
+                            <div class="p-4 bg-white dark:bg-[#131314] rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm">
+                                
+                                <div class="flex justify-between items-center mb-3 pb-2 border-b border-gray-100 dark:border-gray-800">
+                                    <p class="text-xs text-gray-500">トピック: <a href="{{ route('topics.show', $comment->topic_id) }}" class="text-blue-500 hover:underline font-bold">{{ $comment->topic->title }}</a></p>
                                     <span class="text-xs text-gray-500">{{ $comment->created_at->format('Y-m-d H:i') }}</span>
                                 </div>
-                                @if($comment->parent_id)
-                                    <div class="text-[10px] text-gray-400 mb-1 flex items-center">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1 transform rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" /></svg>
-                                        {{ $comment->parent->user->name ?? '誰か' }} への返信
+                                
+                                <div>
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <span class="text-[10px] bg-gray-100 text-gray-800 dark:bg-[#1e1f20] dark:text-gray-300 px-1.5 py-0.5 rounded font-bold">あなたの投稿</span>
+                                    </div>
+                                    <p class="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap">{{ $comment->body }}</p>
+                                    
+                                    <div class="mt-2 flex items-center text-gray-500 dark:text-gray-400">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 mr-1"><path d="M7.493 18.5c-.425 0-.82-.236-.975-.632A7.48 7.48 0 0 1 6 15.125c0-1.75.599-3.358 1.602-4.634.151-.192.373-.309.6-.397.473-.183.89-.514 1.212-.924a9.042 9.042 0 0 1 2.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 0 0 .322-1.672V2.75A.75.75 0 0 1 15 2a2.25 2.25 0 0 1 2.25 2.25c0 1.152-.26 2.243-.723 3.218-.266.558.107 1.282.725 1.282h3.126c1.026 0 1.945.694 2.054 1.715.045.422.067.85.067 1.285a11.2 11.2 0 0 1-2.649 7.324C18.784 19.38 17.06 20 15.25 20h-4.735a7.22 7.22 0 0 1-3.022-.662Z" /><path d="M1.5 8.625c0-1.036.84-1.875 1.875-1.875h1.5A1.875 1.875 0 0 1 6.75 8.625v10.5a1.875 1.875 0 0 1-1.875 1.875h-1.5A1.875 1.875 0 0 1 1.5 19.125v-10.5Z" /></svg>
+                                        <span class="text-xs font-bold">{{ $comment->likes()->count() ?? 0 }}</span>
+                                    </div>
+                                </div>
+
+                                @if($comment->replies->count() > 0)
+                                    <div class="mt-4 space-y-4 border-l-2 border-gray-200 dark:border-gray-700 pl-4 ml-2">
+                                        @foreach($comment->replies as $reply)
+                                            <div class="relative">
+                                                <div class="flex justify-between items-center mb-1">
+                                                    <span class="text-[10px] bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 px-1.5 py-0.5 rounded font-bold">投稿者（補足）</span>
+                                                    <span class="text-[10px] text-gray-500">{{ $reply->created_at->format('Y-m-d H:i') }}</span>
+                                                </div>
+                                                <p class="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap">{{ $reply->body }}</p>
+                                                
+                                                <div class="mt-1 flex items-center text-gray-500 dark:text-gray-400">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-3 h-3 mr-1"><path d="M7.493 18.5c-.425 0-.82-.236-.975-.632A7.48 7.48 0 0 1 6 15.125c0-1.75.599-3.358 1.602-4.634.151-.192.373-.309.6-.397.473-.183.89-.514 1.212-.924a9.042 9.042 0 0 1 2.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 0 0 .322-1.672V2.75A.75.75 0 0 1 15 2a2.25 2.25 0 0 1 2.25 2.25c0 1.152-.26 2.243-.723 3.218-.266.558.107 1.282.725 1.282h3.126c1.026 0 1.945.694 2.054 1.715.045.422.067.85.067 1.285a11.2 11.2 0 0 1-2.649 7.324C18.784 19.38 17.06 20 15.25 20h-4.735a7.22 7.22 0 0 1-3.022-.662Z" /><path d="M1.5 8.625c0-1.036.84-1.875 1.875-1.875h1.5A1.875 1.875 0 0 1 6.75 8.625v10.5a1.875 1.875 0 0 1-1.875 1.875h-1.5A1.875 1.875 0 0 1 1.5 19.125v-10.5Z" /></svg>
+                                                    <span class="text-[10px] font-bold">{{ $reply->likes()->count() ?? 0 }}</span>
+                                                </div>
+                                            </div>
+                                        @endforeach
                                     </div>
                                 @endif
-                                <p class="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap">{{ $comment->body }}</p>
+                                
                             </div>
                         @empty
                             <p class="text-gray-500 text-sm">まだコメントしていません。</p>

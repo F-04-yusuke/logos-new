@@ -20,7 +20,7 @@ return new class extends Migration
             $table->timestamps();
 
             // 🌟 1つのトピックにつき、1ユーザー1件しか保存できないようにする強力な制限
-            $table->unique(['user_id', 'topic_id']);
+            // $table->unique(['user_id', 'topic_id']);
         });
     }
 
