@@ -58,6 +58,28 @@
                 @if ($post->comment)
                 <div class="text-gray-800 dark:text-gray-300 text-sm whitespace-pre-wrap mt-1">{{ $post->comment }}</div>
                 @endif
+
+                @if ($post->supplement)
+                <div class="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-800/50 text-sm">
+                    <span class="font-bold text-blue-600 dark:text-blue-400 text-[10px] block mb-1">✅ 投稿者からの補足</span>
+                    <p class="text-gray-800 dark:text-gray-200 whitespace-pre-wrap">{{ $post->supplement }}</p>
+                </div>
+            @elseif ($post->user_id === auth()->id())
+                <div x-data="{ openSupplement: false }" class="mt-2">
+                    <button @click="openSupplement = !openSupplement" x-show="!openSupplement" type="button" class="text-[11px] text-blue-500 hover:text-blue-700 font-bold transition-colors">
+                        ＋ 補足を追加する（※1回のみ）
+                    </button>
+                    <form x-show="openSupplement" x-cloak method="POST" action="{{ route('posts.supplement', $post) }}" class="mt-2 p-3 bg-gray-50 dark:bg-[#131314] rounded-lg border border-gray-200 dark:border-gray-800 shadow-sm">
+                        @csrf
+                        <textarea name="supplement" rows="2" class="w-full text-sm rounded-md border-gray-300 dark:border-gray-700 dark:bg-[#1e1f20] dark:text-white mb-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500" required placeholder="URLに対する追加の補足や、時間の経過による状況の変化などを入力してください（※後から編集はできません）"></textarea>
+                        <div class="flex justify-end gap-3">
+                            <button type="button" @click="openSupplement = false" class="text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 font-bold">キャンセル</button>
+                            <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold py-1.5 px-4 rounded transition-colors">補足を投稿</button>
+                        </div>
+                    </form>
+                </div>
+            @endif
+
             </div>
             <div class="mt-3 flex items-center justify-end gap-3">
                 @if ($post->user_id === auth()->id())

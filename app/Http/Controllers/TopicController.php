@@ -154,33 +154,40 @@ class TopicController extends Controller
                 // 新着順
                 $query->latest();
             } else {
-                // 🌟 変更：指定がない・popularの場合は「人気順（いいねの数が多い順）」
+                // 指定がない・popularの場合は「人気順（いいねの数が多い順）」
                 $query->withCount('likes')->orderBy('likes_count', 'desc')->latest();
             }
         } else {
-            // 🌟 変更：デフォルトを「人気順」にしました
+            // デフォルトを「人気順」にしました
             $query->withCount('likes')->orderBy('likes_count', 'desc')->latest();
         }
 
         // ④ 絞り込みと並び替えが終わった状態のデータを取得
         $posts = $query->get();
 
-        // 🌟 新機能：コメントタブ用のデータを取得する
+        // コメントタブ用のデータを取得する
         // コメントにも「いいね数（参考になった数）」をくっつけて取得する準備をします
-        $commentQuery = $topic->comments()->with('user')->withCount('likes');
+        // 親コメント（parent_id が空のもの）だけを取得し、それに紐づく返信（replies）も一緒に読み込む
+        $commentQuery = $topic->comments()
+            ->whereNull('parent_id')
+            ->with(['user', 'replies' => function($q) {
+                // 返信にもユーザー情報といいね数をくっつける
+                $q->with('user')->withCount('likes')->oldest();
+            }])
+            ->withCount('likes');
         
-        // 🌟 新機能：コメント用の並び替え（comment_sort）処理
+        // コメント用の並び替え（comment_sort）処理
         if ($request->filled('comment_sort')) {
             if ($request->comment_sort === 'oldest') {
                 $commentQuery->oldest();
             } elseif ($request->comment_sort === 'newest') {
                 $commentQuery->latest();
             } else {
-                // 🌟 変更：指定がない・popularの場合は「人気順」
+                // 指定がない・popularの場合は「人気順」
                 $commentQuery->orderBy('likes_count', 'desc')->latest();
             }
         } else {
-            // 🌟 変更：デフォルトを「人気順」にしました
+            // デフォルトを「人気順」にしました
             $commentQuery->orderBy('likes_count', 'desc')->latest();
         }
         $comments = $commentQuery->get();
@@ -191,7 +198,7 @@ class TopicController extends Controller
             $userComment = $topic->comments()->where('user_id', auth()->id())->first();
         }
 
-        // 🌟 新機能：分析・図解タブ用のデータを取得し、並び替える
+        // 分析・図解タブ用のデータを取得し、並び替える
         $analysisQuery = \App\Models\Analysis::where('topic_id', $topic->id)->where('is_published', true)->with('user')->withCount('likes');
         
         if ($request->filled('analysis_sort')) {
@@ -214,7 +221,7 @@ class TopicController extends Controller
             $myAvailableAnalyses = \App\Models\Analysis::where('user_id', auth()->id())->where('is_published', false)->latest()->get();
         }
 
-        // ⑤ 画面に渡す（🌟 荷物リストに comments, userComment, topicAnalyses, myAvailableAnalyses を追加！）
+        // ⑤ 画面に渡す（荷物リストに comments, userComment, topicAnalyses, myAvailableAnalyses を追加！）
         return view('topics.show', compact('topic', 'posts', 'comments', 'userComment', 'topicAnalyses', 'myAvailableAnalyses'));
     }
 
@@ -226,7 +233,7 @@ class TopicController extends Controller
             abort(403, '他のユーザーのトピックは編集できません。');
         }
         
-        // 🌟 追加：編集画面でもカテゴリを選べるように、カテゴリ一覧を取得して渡す
+        // 編集画面でもカテゴリを選べるように、カテゴリ一覧を取得して渡す
         $categories = \App\Models\Category::whereNull('parent_id')->with('children')->get();
         
         return view('topics.edit', compact('topic', 'categories'));

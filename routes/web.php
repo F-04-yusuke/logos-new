@@ -105,5 +105,12 @@ Route::delete('/analyses/{analysis}', [\App\Http\Controllers\AnalysisController:
 // 分析・図解のいいねルート
 Route::post('/analyses/{analysis}/like', [\App\Http\Controllers\AnalysisController::class, 'toggleLike'])->name('analyses.like')->middleware('auth');
 
+// 補足機能のルート
+Route::post('/posts/{post}/supplement', [\App\Http\Controllers\SupplementController::class, 'storePost'])->name('posts.supplement')->middleware('auth');
+Route::post('/analyses/{analysis}/supplement', [\App\Http\Controllers\SupplementController::class, 'storeAnalysis'])->name('analyses.supplement')->middleware('auth');
+
+// コメントへの返信ルート
+Route::post('/comments/{comment}/reply', [\App\Http\Controllers\CommentController::class, 'reply'])->name('comments.reply')->middleware('auth');
+
 require __DIR__.'/auth.php';
 

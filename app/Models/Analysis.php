@@ -17,6 +17,7 @@ class Analysis extends Model
         'type',
         'data',
         'is_published',
+        'supplement',
     ];
 
     // JSONデータを自動的に配列として扱えるようにする魔法

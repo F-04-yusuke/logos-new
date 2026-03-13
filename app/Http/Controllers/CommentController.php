@@ -66,4 +66,42 @@ class CommentController extends Controller
         }
         return back();
     }
+
+    // コメントに対する返信（補足）を保存する処理
+    public function reply(Request $request, \App\Models\Comment $comment)
+    {
+        $user = auth()->user();
+
+        // 孫への返信（返信に対する返信）は不可とするルール
+        if ($comment->parent_id) {
+            abort(400, '返信への返信はできません。');
+        }
+
+        // 回数制限ルールのチェック
+        if ($comment->user_id === $user->id) {
+            // 自分のコメントへの返信（補足）は5回まで
+            $replyCount = $comment->replies()->where('user_id', $user->id)->count();
+            if ($replyCount >= 5) {
+                return back()->with('error', '自分のコメントへの補足（返信）は最大5回までです。');
+            }
+        } else {
+            // 他人のコメントへの返信は1回まで
+            $replyCount = $comment->replies()->where('user_id', $user->id)->count();
+            if ($replyCount >= 1) {
+                return back()->with('error', 'このコメントへの返信は1回までです。');
+            }
+        }
+
+        $request->validate(['body' => 'required|string|max:1000']);
+
+        // 返信を保存
+        \App\Models\Comment::create([
+            'body' => $request->body,
+            'user_id' => $user->id,
+            'topic_id' => $comment->topic_id,
+            'parent_id' => $comment->id, // ここで親コメントと紐付けます
+        ]);
+
+        return back()->with('status', '返信を投稿しました。');
+    }
 }
