@@ -150,6 +150,86 @@
                 </div>
             </td>`;
 
+        // 編集モードでの復元処理（パターン・アイテム・テーマ）
+        document.addEventListener('DOMContentLoaded', function() {
+            @if(isset($analysis) && !empty($analysis->data))
+                const savedData = @json($analysis->data);
+                
+                if(savedData.theme) {
+                    const themeInput = document.getElementById('matrix-theme-input') || document.getElementById('theme-input');
+                    if(themeInput) themeInput.value = savedData.theme;
+                }
+                if(savedData.meta) {
+                    const urlInput = document.getElementById('info-url');
+                    const descInput = document.getElementById('info-desc');
+                    if(urlInput) urlInput.value = savedData.meta.url || '';
+                    if(descInput) descInput.value = savedData.meta.description || '';
+                }
+
+                // パターン（列）の復元
+                if(savedData.patterns && savedData.patterns.length > 0) {
+                    const headerRow = document.getElementById('header-row');
+                    const addColTh = document.getElementById('add-col-th');
+                    if(headerRow && addColTh) {
+                        headerRow.querySelectorAll('.col-pattern').forEach(el => el.remove());
+                        savedData.patterns.forEach(pattern => {
+                            const th = document.createElement('th');
+                            th.className = "p-3 border-b border-r border-gray-200 dark:border-gray-700 w-64 bg-gray-50 dark:bg-[#131314] align-top relative group col-pattern";
+                            th.innerHTML = `
+                                <div class="flex items-center justify-between mb-2">
+                                    <input type="text" value="${pattern.title || ''}" class="w-full bg-transparent font-bold text-blue-600 dark:text-blue-400 focus:outline-none focus:border-b border-blue-500 text-sm">
+                                    <button onclick="removeColumn(this)" class="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity px-1 text-xs">✕</button>
+                                </div>
+                                <textarea oninput="autoResize(this)" class="w-full bg-transparent text-gray-600 dark:text-gray-400 text-xs focus:outline-none focus:border-b border-gray-300 dark:border-gray-500" rows="1">${pattern.description || ''}</textarea>
+                            `;
+                            headerRow.insertBefore(th, addColTh);
+                        });
+                    }
+                }
+
+                // アイテム（行）の復元
+                const tbody = document.getElementById('matrix-body') || document.querySelector('tbody');
+                if(tbody && savedData.items && savedData.items.length > 0) {
+                    tbody.innerHTML = ''; 
+                    savedData.items.forEach(item => {
+                        const tr = document.createElement('tr');
+                        tr.className = "border-b border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-[#1e1f20] transition-colors row-item group";
+                        
+                        let cellsHTML = `
+                            <td class="p-3 align-top border-r border-gray-200 dark:border-gray-800 relative">
+                                <button onclick="removeRow(this)" class="absolute top-2 left-1 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity text-xs">✕</button>
+                                <textarea oninput="autoResize(this)" class="matrix-item-title w-full bg-transparent font-bold text-gray-900 dark:text-gray-100 text-sm ml-3" rows="1">${item.itemTitle || item.title || ''}</textarea>
+                            </td>
+                        `;
+                        
+                        const evals = item.evaluations || item.scores || [];
+                        const colCount = document.querySelectorAll('.col-pattern').length;
+                        for(let i=0; i<colCount; i++) {
+                            const evalData = evals[i] || {};
+                            cellsHTML += `
+                                <td class="p-3 align-top border-r border-gray-200 dark:border-gray-800">
+                                    <div class="flex flex-col gap-2">
+                                        <select onchange="if(typeof updateScore === 'function') updateScore()" class="w-full bg-gray-50 dark:bg-[#131314] text-gray-900 dark:text-gray-100 text-sm font-bold rounded p-1">
+                                            <option value="3" ${evalData.score == 3 ? 'selected' : ''}>◎ 最適</option>
+                                            <option value="2" ${evalData.score == 2 ? 'selected' : ''}>〇 良い</option>
+                                            <option value="1" ${evalData.score == 1 ? 'selected' : ''}>△ 懸念あり</option>
+                                            <option value="0" ${evalData.score == 0 ? 'selected' : ''}>× 不可</option>
+                                            <option value="-1" ${evalData.score == -1 || evalData.score === undefined ? 'selected' : ''}>-- 評価 --</option>
+                                        </select>
+                                        <textarea oninput="autoResize(this)" class="w-full bg-transparent text-gray-600 dark:text-gray-300 text-xs rounded p-1" rows="2">${evalData.reason || ''}</textarea>
+                                    </div>
+                                </td>
+                            `;
+                        }
+                        tr.innerHTML = cellsHTML;
+                        tbody.appendChild(tr);
+                    });
+                }
+                if(typeof updateScore === 'function') updateScore();
+                setTimeout(() => document.querySelectorAll('textarea').forEach(t => autoResize(t)), 100);
+            @endif
+        });
+
         function addColumn() {
             const headerRow = document.getElementById('header-row');
             const addColTh = document.getElementById('add-col-th');
@@ -419,6 +499,71 @@
                 btn.disabled = false;
                 btn.classList.remove('opacity-70', 'cursor-not-allowed');
             });
+        }
+
+        // 🌟 追加・修正：テーマを含めて保存＆PATCH通信（上書き保存）に対応
+        function saveMatrix() {
+            const btn = document.getElementById('save-btn');
+            if(!btn) return;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '保存中...';
+            btn.disabled = true;
+
+            // データ構築
+            const data = { patterns: [], items: [] };
+            document.querySelectorAll('.col-pattern').forEach(col => {
+                const titleInput = col.querySelector('input');
+                const descInput = col.querySelector('textarea');
+                data.patterns.push({ 
+                    title: titleInput ? titleInput.value : '', 
+                    description: descInput ? descInput.value : '' 
+                });
+            });
+            document.querySelectorAll('.row-item').forEach(row => {
+                const itemInput = row.querySelector('input') || row.querySelector('.matrix-item-title');
+                const itemTitle = itemInput ? itemInput.value : '';
+                const evaluations = [];
+                for (let i = 1; i <= data.patterns.length; i++) {
+                    const cell = row.children[i];
+                    if (cell) {
+                        const select = cell.querySelector('select');
+                        const textarea = cell.querySelector('textarea');
+                        evaluations.push({ 
+                            score: select ? select.value : '-1', 
+                            reason: textarea ? textarea.value : '' 
+                        });
+                    }
+                }
+                data.items.push({ itemTitle, evaluations });
+            });
+
+            const themeInput = document.getElementById('matrix-theme-input') || document.getElementById('theme-input');
+            const theme = themeInput ? themeInput.value.trim() : '';
+            const urlInput = document.getElementById('info-url');
+            const descInput = document.getElementById('info-desc');
+            const url = urlInput ? urlInput.value.trim() : '';
+            const desc = descInput ? descInput.value.trim() : '';
+            
+            const payloadData = {
+                theme: theme,
+                meta: { url: url, description: desc },
+                patterns: data.patterns,
+                items: data.items
+            };
+
+            const isEdit = {{ isset($analysis) ? 'true' : 'false' }};
+            const title = theme ? '評価表: ' + theme : '総合評価表 (' + new Date().toLocaleDateString() + ')';
+            const fetchUrl = isEdit ? '{{ isset($analysis) ? route("analyses.update", $analysis->id ?? 0) : "" }}' : '{{ route("tools.store") }}';
+            const fetchMethod = isEdit ? 'PATCH' : 'POST';
+
+            fetch(fetchUrl, {
+                method: fetchMethod,
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                body: JSON.stringify({ title: title, type: 'matrix', data: payloadData })
+            })
+            .then(res => res.json())
+            .then(data => { alert(data.message); btn.innerHTML = originalText; btn.disabled = false; })
+            .catch(error => { console.error(error); alert('保存に失敗しました。'); btn.innerHTML = originalText; btn.disabled = false; });
         }
     </script>
 </x-app-layout>

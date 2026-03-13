@@ -104,6 +104,58 @@
     </div>
 
     <script>
+        // 🌟 追加：編集モードでの復元処理（テーマも含む）
+        document.addEventListener('DOMContentLoaded', function() {
+            @if(isset($analysis) && !empty($analysis->data))
+                const savedData = @json($analysis->data);
+                
+                const themeInput = document.getElementById('swot-theme-input') || document.getElementById('theme-input');
+                if(savedData.theme && themeInput) {
+                    themeInput.value = savedData.theme;
+                }
+
+                if(savedData.meta) {
+                    const urlInput = document.getElementById('info-url');
+                    const descInput = document.getElementById('info-desc');
+                    if (urlInput) urlInput.value = savedData.meta.url || '';
+                    if (descInput) descInput.value = savedData.meta.description || '';
+                }
+
+                if(savedData.framework) {
+                    const frameworkSelect = document.getElementById('framework-select');
+                    if(frameworkSelect) {
+                        frameworkSelect.value = savedData.framework;
+                        if(typeof toggleFramework === 'function') toggleFramework();
+                    }
+                }
+
+                // BOX1~4の復元
+                for(let i=1; i<=4; i++) {
+                    let boxList = document.getElementById(`box${i}-list`) || document.getElementById(`list-${['s','w','o','t'][i-1]}`);
+                    const key = `box${i}`;
+                    
+                    if(boxList && savedData[key] && savedData[key].length > 0) {
+                        boxList.innerHTML = ''; 
+                        savedData[key].forEach(text => {
+                            if(typeof addItem === 'function' && boxList.id.startsWith('list-')) {
+                                addItem(boxList.id, text);
+                            } else {
+                                const div = document.createElement('div');
+                                div.className = "flex items-start gap-2 mb-2 group";
+                                div.innerHTML = `
+                                    <span class="mt-1.5 w-1.5 h-1.5 rounded-full bg-gray-400 dark:bg-gray-600 shrink-0"></span>
+                                    <textarea oninput="autoResize(this)" class="w-full bg-transparent border-none text-sm text-gray-800 dark:text-gray-200 focus:ring-0 p-0 resize-none" rows="1">${text}</textarea>
+                                    <button onclick="this.closest('.flex').remove()" class="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
+                                `;
+                                boxList.appendChild(div);
+                            }
+                        });
+                    }
+                }
+                setTimeout(() => document.querySelectorAll('textarea').forEach(t => autoResize(t)), 100);
+            @endif
+        });
+
         function autoResize(textarea) { textarea.style.height = 'auto'; textarea.style.height = (textarea.scrollHeight) + 'px'; }
 
         function addItem(listId, text = "", isAI = false) {
@@ -126,7 +178,7 @@
             if (badge) { badge.style.opacity = '0'; setTimeout(() => badge.remove(), 300); }
         }
 
-        // 🌟 追加1：プルダウン変更時にタイトルを切り替える
+        // プルダウン変更時にタイトルを切り替える
         function toggleFramework() {
             const fw = document.getElementById('framework-select').value;
             if (fw === 'SWOT') {
@@ -142,7 +194,7 @@
             }
         }
 
-        // 🌟 追加2：SWOT/PESTを判定してAIに指示を出す（1つにまとめます）
+        // SWOT/PESTを判定してAIに指示を出す（1つにまとめます）
         function generateWithAI() {
             const btn = document.getElementById('ai-btn');
             const originalText = btn.innerHTML;
@@ -207,43 +259,58 @@
             });
         }
 
-        // 🌟 追加3：保存時にフレームワークの種類も一緒に保存する
+        // 🌟 修正：テーマを含めて保存＆PATCH通信（上書き保存）に対応
         function saveSwot() {
             const btn = document.getElementById('save-btn');
+            if(!btn) return;
             const originalText = btn.innerHTML;
             btn.innerHTML = '保存中...';
             btn.disabled = true;
 
-            const fw = document.getElementById('framework-select').value;
-            const theme = document.getElementById('theme-input').value.trim() || '未設定のテーマ';
-            const swotData = {
-                framework: fw,
-                theme: theme,
-                box1: getListData('list-s'),
-                box2: getListData('list-w'),
-                box3: getListData('list-o'),
-                box4: getListData('list-t')
+            const fwSelect = document.getElementById('framework-select');
+            const fw = fwSelect ? fwSelect.value : 'SWOT';
+            
+            const themeInput = document.getElementById('swot-theme-input') || document.getElementById('theme-input');
+            const theme = themeInput ? themeInput.value.trim() : '';
+            
+            const urlInput = document.getElementById('info-url');
+            const descInput = document.getElementById('info-desc');
+            const url = urlInput ? urlInput.value.trim() : '';
+            const desc = descInput ? descInput.value.trim() : '';
+
+            // 汎用的にテキストを取得
+            const getTexts = (id1, id2) => {
+                const container = document.getElementById(id1) || document.getElementById(id2);
+                if(!container) return [];
+                return Array.from(container.querySelectorAll('textarea'))
+                            .map(t => t.value.trim())
+                            .filter(t => t.length > 0);
             };
 
-            const title = theme !== '未設定のテーマ' ? fw + ': ' + theme : fw + '分析 (' + new Date().toLocaleDateString() + ')';
+            const payloadData = {
+                meta: { url: url, description: desc },
+                framework: fw,
+                theme: theme,
+                box1: getTexts('box1-list', 'list-s'),
+                box2: getTexts('box2-list', 'list-w'),
+                box3: getTexts('box3-list', 'list-o'),
+                box4: getTexts('box4-list', 'list-t')
+            };
 
-            fetch('{{ route("tools.store") }}', {
-                method: 'POST',
+            const isEdit = {{ isset($analysis) ? 'true' : 'false' }};
+            const title = theme ? fw + ': ' + theme : fw + '分析 (' + new Date().toLocaleDateString() + ')';
+            
+            const fetchUrl = isEdit ? '{{ isset($analysis) ? route("analyses.update", $analysis->id ?? 0) : "" }}' : '{{ route("tools.store") }}';
+            const fetchMethod = isEdit ? 'PATCH' : 'POST';
+
+            fetch(fetchUrl, {
+                method: fetchMethod,
                 headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-                body: JSON.stringify({ title: title, type: 'swot', data: swotData })
+                body: JSON.stringify({ title: title, type: 'swot', data: payloadData })
             })
-            .then(response => response.json())
-            .then(data => {
-                alert(data.message);
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('保存に失敗しました。');
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            });
+            .then(res => res.json())
+            .then(data => { alert(data.message); btn.innerHTML = originalText; btn.disabled = false; })
+            .catch(error => { console.error(error); alert('保存に失敗しました。'); btn.innerHTML = originalText; btn.disabled = false; });
         }
 
         // 各リストの中身を取得するヘルパー関数

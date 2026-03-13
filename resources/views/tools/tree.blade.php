@@ -2,7 +2,9 @@
     <x-slot name="header">
         <div class="flex justify-between items-center w-full">
             <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" /></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                </svg>
                 ロジックツリー作成 (PRO)
             </h2>
             <button onclick="saveTree()" id="save-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-4 rounded text-sm transition-colors shadow-sm">
@@ -13,12 +15,13 @@
 
     <div class="py-6">
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
-            
+
             <style>
                 textarea {
                     resize: none;
                     overflow: hidden;
                 }
+
                 .tree-line::before {
                     content: '';
                     position: absolute;
@@ -29,9 +32,11 @@
                     background-color: #374151;
                     border-radius: 2px;
                 }
+
                 .chat-scroll::-webkit-scrollbar {
                     width: 6px;
                 }
+
                 .chat-scroll::-webkit-scrollbar-thumb {
                     background-color: #4B5563;
                     border-radius: 3px;
@@ -51,14 +56,16 @@
                             <span class="bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">事前情報</span>
                             <span class="text-xs text-gray-500 dark:text-gray-400">AI読み込み用データ</span>
                         </div>
-                        
+
                         <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6 flex flex-col sm:flex-row gap-3 items-end">
                             <div class="flex-1 w-full">
                                 <label class="block text-xs font-bold text-blue-800 dark:text-blue-300 mb-1">AIでツリーの土台を自動生成</label>
                                 <input type="text" id="tree-theme-input" class="w-full bg-white dark:bg-[#131314] border border-blue-300 dark:border-blue-700 rounded text-gray-900 dark:text-gray-100 text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="議論したいテーマを入力（例：消費税増税の是非について）">
                             </div>
                             <button id="ai-generate-btn" onclick="generateWithAI()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded text-sm transition-colors shadow-sm shrink-0 flex items-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                </svg>
                                 AIで生成
                             </button>
                         </div>
@@ -67,28 +74,32 @@
                             <input type="url" id="info-url" class="w-full bg-transparent dark:bg-[#131314] border-b border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-200 text-sm py-2 focus:outline-none focus:border-blue-500 transition-colors placeholder-gray-400 dark:placeholder-gray-600" placeholder="元情報のURL (例: https://youtu.be/...)">
                             <textarea id="info-desc" oninput="autoResize(this)" class="w-full bg-transparent dark:bg-[#131314] border-b border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-200 text-sm py-2 focus:outline-none focus:border-blue-500 transition-colors placeholder-gray-400 dark:placeholder-gray-600" rows="1" placeholder="トピックの主題や元情報の概要を入力..."></textarea>
                         </div>
-                        
+
                         <button onclick="addNode(document.getElementById('root-replies'))" class="text-xs font-bold text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors flex items-center bg-gray-100 hover:bg-gray-200 dark:bg-gray-800/50 dark:hover:bg-gray-700 px-3 py-1.5 rounded-full w-fit border border-gray-200 dark:border-gray-700">
                             <span class="text-base mr-1 leading-none">＋</span> 分岐を追加
                         </button>
                     </div>
 
                     <div id="root-replies" class="space-y-2">
-                        </div>
+                    </div>
                 </div>
 
                 <div class="mt-8 border-t border-gray-200 dark:border-gray-800 pt-8">
                     <h2 class="text-xl font-bold mb-4 flex items-center text-gray-900 dark:text-gray-100">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 text-blue-500 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 text-blue-500 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
                         AIアシスタント (Gemini連携準備中)
                     </h2>
-                    
+
                     <div class="bg-white dark:bg-[#1e1f20] border border-gray-200 dark:border-gray-700 rounded-xl flex flex-col h-[400px] shadow-sm dark:shadow-lg overflow-hidden">
-                        
+
                         <div id="chat-history" class="chat-scroll flex-1 overflow-y-auto p-4 space-y-4">
                             <div class="flex gap-3">
                                 <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center shrink-0 shadow-md">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                    </svg>
                                 </div>
                                 <div class="bg-gray-100 dark:bg-[#131314] p-3 rounded-lg rounded-tl-none text-sm text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-800 max-w-[85%]">
                                     ※これはUIの確認用モックアップです。本番環境ではここにGemini APIからの実際の回答が表示されます。<br>
@@ -125,7 +136,39 @@
             textarea.style.height = (textarea.scrollHeight) + 'px';
         }
 
-        // 🌟 修正1：手動追加時のプルダウンに「主張」を追加
+        // 編集モードで開いた場合、保存されていたデータを復元する（テーマも含む）
+        document.addEventListener('DOMContentLoaded', function() {
+            @if(isset($analysis) && !empty($analysis->data))
+                const savedData = @json($analysis->data);
+                
+                // 1. テーマの復元
+                if(savedData.theme) {
+                    const themeInput = document.getElementById('tree-theme-input');
+                    if(themeInput) themeInput.value = savedData.theme;
+                }
+
+                // 2. 事前情報の復元
+                if(savedData.meta) {
+                    const urlInput = document.getElementById('info-url');
+                    const descInput = document.getElementById('info-desc');
+                    if (urlInput) urlInput.value = savedData.meta.url || '';
+                    if (descInput) descInput.value = savedData.meta.description || '';
+                }
+                
+                // 3. ツリー構造の復元
+                const rootContainer = document.getElementById('root-replies');
+                rootContainer.innerHTML = ''; 
+                if(savedData.nodes && savedData.nodes.length > 0) {
+                    savedData.nodes.forEach(node => {
+                        rootContainer.insertAdjacentHTML('beforeend', buildNodeHTML(node));
+                    });
+                    updateAllLabels();
+                    setTimeout(() => document.querySelectorAll('textarea').forEach(t => autoResize(t)), 100);
+                }
+            @endif
+        });
+
+        // 手動追加時のプルダウンに「主張」を追加
         function addNode(container) {
             const nodeHTML = `
                 <div class="mt-2 group relative tree-line tree-node">
@@ -164,30 +207,30 @@
                 </div>
             `;
             container.insertAdjacentHTML('beforeend', nodeHTML);
-            updateAllLabels(); 
+            updateAllLabels();
         }
 
         function removeNode(btn) {
             btn.closest('.tree-node').remove();
-            updateAllLabels(); 
+            updateAllLabels();
         }
 
         function handleSelectChange(selectElement) {
             updateSpeakerColor(selectElement);
-            updateAllLabels(); 
+            updateAllLabels();
         }
 
         function updateAllLabels() {
             const nodes = document.querySelectorAll('.tree-node');
-            const counts = {}; 
+            const counts = {};
             const aiSelect = document.getElementById('ai-target-select');
-            
+
             aiSelect.innerHTML = '<option value="指定なし">指定なし (全体への質問・調査)</option>';
 
             nodes.forEach(node => {
                 const select = node.querySelector('.speaker-select');
                 const speaker = select.value;
-                
+
                 if (!counts[speaker]) counts[speaker] = 0;
                 counts[speaker]++;
 
@@ -252,7 +295,7 @@
                 </div>
             `;
             chatHistory.insertAdjacentHTML('beforeend', userMsg);
-            
+
             inputEl.value = '';
             inputEl.style.height = 'auto';
             chatHistory.scrollTop = chatHistory.scrollHeight;
@@ -279,31 +322,31 @@
             const descInput = document.getElementById('info-desc');
             const url = urlInput ? urlInput.value.trim() : '';
             const desc = descInput ? descInput.value.trim() : '';
-            
+
             let contextText = "";
             if (desc || url) contextText += `【事前情報】\n概要: ${desc}\nURL: ${url}\n\n`;
             contextText += '【現在のツリー構造】\n' + JSON.stringify(treeData, null, 2);
 
             // Laravelのバックエンド（AnalysisController@aiAssist）に送信
             fetch('{{ route("tools.ai_assist") }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                },
-                body: JSON.stringify({
-                    prompt: (target !== '指定なし' ? '対象: 【' + target + '】\n' : '') + text,
-                    context: contextText
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({
+                        prompt: (target !== '指定なし' ? '対象: 【' + target + '】\n' : '') + text,
+                        context: contextText
+                    })
                 })
-            })
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById(loadingId).remove();
-                
-                let replyText = data.reply || data.error || 'エラーが発生しました。';
-                replyText = replyText.replace(/\*\*(.*?)\*\*/g, '<span class="font-bold text-gray-900 dark:text-white">$1</span>');
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById(loadingId).remove();
 
-                const aiMsg = `
+                    let replyText = data.reply || data.error || 'エラーが発生しました。';
+                    replyText = replyText.replace(/\*\*(.*?)\*\*/g, '<span class="font-bold text-gray-900 dark:text-white">$1</span>');
+
+                    const aiMsg = `
                     <div class="flex gap-3">
                         <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center shrink-0 shadow-md">
                             <svg class="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
@@ -311,13 +354,13 @@
                         <div class="bg-gray-100 dark:bg-[#131314] p-3 rounded-lg rounded-tl-none text-sm text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-800 max-w-[85%] whitespace-pre-wrap leading-relaxed">${replyText}</div>
                     </div>
                 `;
-                chatHistory.insertAdjacentHTML('beforeend', aiMsg);
-                chatHistory.scrollTop = chatHistory.scrollHeight;
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                document.getElementById(loadingId).remove();
-                const errorMsg = `
+                    chatHistory.insertAdjacentHTML('beforeend', aiMsg);
+                    chatHistory.scrollTop = chatHistory.scrollHeight;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById(loadingId).remove();
+                    const errorMsg = `
                     <div class="flex gap-3">
                         <div class="w-8 h-8 rounded-full bg-red-600 flex items-center justify-center shrink-0 shadow-md text-white font-bold">!</div>
                         <div class="bg-red-50 dark:bg-red-900/30 p-3 rounded-lg rounded-tl-none text-sm text-red-800 dark:text-red-200 border border-red-200 dark:border-red-800">
@@ -325,59 +368,74 @@
                         </div>
                     </div>
                 `;
-                chatHistory.insertAdjacentHTML('beforeend', errorMsg);
-                chatHistory.scrollTop = chatHistory.scrollHeight;
-            });
+                    chatHistory.insertAdjacentHTML('beforeend', errorMsg);
+                    chatHistory.scrollTop = chatHistory.scrollHeight;
+                });
         }
 
         // ツリーの階層構造を読み取る再帰関数
         function buildTreeData(container) {
             const data = [];
             const nodes = container.children;
-            for(let i=0; i<nodes.length; i++) {
-                if(nodes[i].classList.contains('tree-node')) {
+            for (let i = 0; i < nodes.length; i++) {
+                if (nodes[i].classList.contains('tree-node')) {
                     const nodeEl = nodes[i];
                     const speaker = nodeEl.querySelector('.speaker-select').value;
                     const stance = nodeEl.querySelector('.stance-select').value;
                     const text = nodeEl.querySelector('textarea').value;
                     const repliesContainer = nodeEl.querySelector('.replies-container');
-                    
+
                     // 子ノード（返信）があれば、再帰的に読み取る
                     const children = buildTreeData(repliesContainer);
 
-                    data.push({ speaker, stance, text, children });
+                    data.push({
+                        speaker,
+                        stance,
+                        text,
+                        children
+                    });
                 }
             }
             return data;
         }
 
-        // データベースに送信する処理
+        // テーマを含めて保存＆PATCH通信（上書き保存）に対応
         function saveTree() {
             const btn = document.getElementById('save-btn');
             const originalText = btn.innerHTML;
             btn.innerHTML = '保存中...';
             btn.disabled = true;
 
-            // 事前情報（meta）とツリー構造（nodes）をセットにして保存
+            // 各種データの取得
             const rootContainer = document.getElementById('root-replies');
             const treeData = buildTreeData(rootContainer);
+            const theme = document.getElementById('tree-theme-input').value.trim();
             const url = document.getElementById('info-url').value.trim();
             const desc = document.getElementById('info-desc').value.trim();
             
+            // payloadにテーマ(theme)を追加
             const payloadData = {
+                theme: theme,
                 meta: { url: url, description: desc },
                 nodes: treeData
             };
 
-            const title = 'ロジックツリー (' + new Date().toLocaleDateString() + ')';
+            // 編集モードかどうか判定
+            const isEdit = {{ isset($analysis) ? 'true' : 'false' }};
+            // タイトルにテーマを反映
+            const title = theme ? 'ツリー: ' + theme : 'ロジックツリー (' + new Date().toLocaleDateString() + ')';
+            
+            // 新規作成(POST)と上書き保存(PATCH)で送信先とメソッドを切り替え
+            const fetchUrl = isEdit ? '{{ isset($analysis) ? route("analyses.update", $analysis->id ?? 0) : "" }}' : '{{ route("tools.store") }}';
+            const fetchMethod = isEdit ? 'PATCH' : 'POST';
 
-            fetch('{{ route("tools.store") }}', {
-                method: 'POST',
+            fetch(fetchUrl, {
+                method: fetchMethod,
                 headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
                 body: JSON.stringify({
                     title: title,
                     type: 'tree',
-                    data: payloadData // まとめたデータを送る
+                    data: payloadData
                 })
             })
             .then(response => response.json())
@@ -393,13 +451,16 @@
                 btn.disabled = false;
             });
         }
-        
+
         // 本物のAIと通信してロジックツリーを自動生成する
-        // 🌟 修正3：AIに正しい話者名を指定させる＆生成後にラベルを更新する
+        // AIに正しい話者名を指定させる＆生成後にラベルを更新する
         function generateWithAI() {
             const btn = document.getElementById('ai-generate-btn');
             const theme = document.getElementById('tree-theme-input').value.trim();
-            if (!theme) { alert('テーマを入力してください'); return; }
+            if (!theme) {
+                alert('テーマを入力してください');
+                return;
+            }
 
             const originalText = btn.innerHTML;
             btn.innerHTML = '<span class="animate-pulse">AIがツリーを構築中...</span>';
@@ -436,46 +497,52 @@
             `;
 
             fetch('{{ route("tools.ai_assist") }}', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-                body: JSON.stringify({ prompt: prompt, context: "JSON配列のみ出力" })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if(data.error) throw new Error(data.error);
-                
-                const jsonMatch = data.reply.match(/\[[\s\S]*\]/);
-                if(!jsonMatch) throw new Error('JSONの抽出に失敗しました');
-                const treeData = JSON.parse(jsonMatch[0]);
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({
+                        prompt: prompt,
+                        context: "JSON配列のみ出力"
+                    })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) throw new Error(data.error);
 
-                const rootContainer = document.getElementById('root-replies');
-                rootContainer.innerHTML = ''; 
-                
-                treeData.forEach(node => {
-                    rootContainer.insertAdjacentHTML('beforeend', buildNodeHTML(node));
+                    const jsonMatch = data.reply.match(/\[[\s\S]*\]/);
+                    if (!jsonMatch) throw new Error('JSONの抽出に失敗しました');
+                    const treeData = JSON.parse(jsonMatch[0]);
+
+                    const rootContainer = document.getElementById('root-replies');
+                    rootContainer.innerHTML = '';
+
+                    treeData.forEach(node => {
+                        rootContainer.insertAdjacentHTML('beforeend', buildNodeHTML(node));
+                    });
+
+                    // 🌟 追加：生成されたノードに「自1」「A2」などのIDを振り直す
+                    updateAllLabels();
+
+                    setTimeout(() => {
+                        document.querySelectorAll('textarea').forEach(t => autoResize(t));
+                    }, 100);
+
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert('AI自動生成に失敗しました。もう一度お試しください。');
+                })
+                .finally(() => {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                    btn.classList.remove('opacity-70', 'cursor-not-allowed');
                 });
-                
-                // 🌟 追加：生成されたノードに「自1」「A2」などのIDを振り直す
-                updateAllLabels();
-
-                setTimeout(() => {
-                    document.querySelectorAll('textarea').forEach(t => autoResize(t));
-                }, 100);
-
-            })
-            .catch(err => {
-                console.error(err);
-                alert('AI自動生成に失敗しました。もう一度お試しください。');
-            })
-            .finally(() => {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-                btn.classList.remove('opacity-70', 'cursor-not-allowed');
-            });
         }
 
         // ツリーの各ノードのHTMLを再帰的に組み立てる関数
-        // 🌟 修正4：手動追加と全く同じHTMLを生成するように変更
+        // 手動追加と全く同じHTMLを生成するように変更
         function buildNodeHTML(node) {
             let childrenHTML = '';
             if (node.children && node.children.length > 0) {
@@ -483,7 +550,7 @@
                     childrenHTML += buildNodeHTML(child);
                 });
             }
-            
+
             // AIが指定してきた値をもとに、初期状態の選択肢や色を設定
             const s = node.speaker || 'ユーザーA';
             const selUserA = s === 'ユーザーA' ? 'selected' : '';
@@ -498,7 +565,7 @@
             const selOpp = st === '反論' ? 'selected' : '';
             const selAgr = st === '賛成・補足' ? 'selected' : '';
             const selQ = st === '疑問' ? 'selected' : '';
-            
+
             let stanceColor = "";
             if (st === '主張') stanceColor = 'bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-400/10 dark:text-gray-400 dark:border-gray-400/30';
             else if (st === '反論') stanceColor = 'bg-red-100 text-red-600 border-red-200 dark:bg-red-400/10 dark:text-red-400 dark:border-red-400/30';

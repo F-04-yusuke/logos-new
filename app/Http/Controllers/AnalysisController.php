@@ -138,7 +138,7 @@ class AnalysisController extends Controller
         return back(); // 元の画面に戻る
     }
 
-    // 分析・図解の編集画面を表示する
+    // 🌟 上書き：分析・図解の編集画面（実際のツール画面）を表示する
     public function edit(\App\Models\Analysis $analysis)
     {
         // 他人のデータは編集できないようにブロック
@@ -146,26 +146,27 @@ class AnalysisController extends Controller
             abort(403, '権限がありません。');
         }
 
-        return view('analyses.edit', compact('analysis'));
+        // ツール種類に応じて、元の作成画面を「編集モード」として開く
+        if ($analysis->type === 'tree') return view('tools.tree', compact('analysis'));
+        if ($analysis->type === 'matrix') return view('tools.matrix', compact('analysis'));
+        if ($analysis->type === 'swot') return view('tools.swot', compact('analysis'));
+
+        return back();
     }
 
-    // 分析・図解のタイトルを更新する
+    // 🌟 上書き：分析・図解のデータ（中身）を完全に上書き保存する
     public function update(\Illuminate\Http\Request $request, \App\Models\Analysis $analysis)
     {
         if ($analysis->user_id !== auth()->id()) {
             abort(403, '権限がありません。');
         }
 
-        // タイトルのみ入力チェック
-        $request->validate([
-            'title' => 'required|string|max:255',
-        ]);
-
-        // データベースを更新
+        // タイトルと中身(data)を上書き保存
         $analysis->update([
-            'title' => $request->title,
+            'title' => $request->title ?? $analysis->title,
+            'data' => $request->data,
         ]);
 
-        return redirect()->route('dashboard')->with('status', '分析・図解のタイトルを更新しました。');
+        return response()->json(['message' => '分析データを上書き保存しました！']);
     }
 }
