@@ -7,7 +7,7 @@
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
+            <div class="bg-white dark:bg-[#1e1f20] overflow-hidden shadow-sm sm:rounded-lg border border-gray-200 dark:border-gray-800">
                 <div class="p-6 text-gray-900 dark:text-gray-100">
                     
                     <form method="POST" action="{{ route('topics.update', $topic) }}">
@@ -15,39 +15,25 @@
                         @method('PATCH')
 
                         <div class="mb-4">
-                            <label for="title" class="block text-sm font-medium text-gray-700 dark:text-gray-300">トピックのタイトル</label>
-                            <input type="text" name="title" id="title" class="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-900 dark:border-gray-700 dark:text-white" value="{{ old('title', $topic->title) }}" required>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">トピックのタイトル</label>
+                            <input type="text" name="title" value="{{ old('title', $topic->title) }}" class="mt-1 block w-full rounded-md border-gray-300 dark:bg-[#131314] dark:border-gray-700 dark:text-white focus:border-blue-500 focus:ring-blue-500" required>
                         </div>
 
-                        <div class="mb-6 p-4 bg-gray-50 dark:bg-gray-900 rounded-md border border-gray-200 dark:border-gray-700">
-                            <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
-                                カテゴリを選択してください（最大2つまで）
-                            </label>
-                            
-                            @error('category_ids')
-                                <p class="text-red-500 text-xs mt-1 mb-2">{{ $message }}</p>
-                            @enderror
-
-                            @php
-                                // 現在このトピックに紐づいているカテゴリIDの配列を取得（チェックを維持するため）
-                                $currentCategoryIds = old('category_ids', $topic->categories->pluck('id')->toArray());
-                            @endphp
-
-                            <div class="space-y-6">
+                        <div class="mb-6 p-4 bg-gray-50 dark:bg-[#131314] rounded-md border border-gray-200 dark:border-gray-800">
+                            <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">カテゴリを選択してください（最大2つまで）</label>
+                            <div class="space-y-4">
                                 @foreach ($categories as $parent)
-                                    <div class="bg-white dark:bg-gray-800 p-3 rounded border border-gray-200 dark:border-gray-700">
-                                        
+                                    <div class="bg-white dark:bg-[#1e1f20] p-3 rounded border border-gray-200 dark:border-gray-700">
                                         <div class="font-semibold text-blue-600 dark:text-blue-400 border-b border-gray-200 dark:border-gray-700 pb-2 mb-3">
-                                            <label class="inline-flex items-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 p-1 rounded">
-                                                <input type="checkbox" name="category_ids[]" value="{{ $parent->id }}" class="category-checkbox rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" {{ in_array($parent->id, $currentCategoryIds) ? 'checked' : '' }}>
-                                                <span class="ml-2">📁 {{ $parent->name }} <span class="text-xs text-gray-400 font-normal">（大分類として選択）</span></span>
+                                            <label class="inline-flex items-center cursor-pointer">
+                                                <input type="checkbox" name="category_ids[]" value="{{ $parent->id }}" class="category-checkbox rounded border-gray-300" {{ in_array($parent->id, old('category_ids', $topic->categories->pluck('id')->toArray())) ? 'checked' : '' }}>
+                                                <span class="ml-2">📁 {{ $parent->name }}</span>
                                             </label>
                                         </div>
-
-                                        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 pl-4">
+                                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3 pl-4">
                                             @foreach ($parent->children as $child)
-                                                <label class="inline-flex items-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 p-1 rounded">
-                                                    <input type="checkbox" name="category_ids[]" value="{{ $child->id }}" class="category-checkbox rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" {{ in_array($child->id, $currentCategoryIds) ? 'checked' : '' }}>
+                                                <label class="inline-flex items-center cursor-pointer">
+                                                    <input type="checkbox" name="category_ids[]" value="{{ $child->id }}" class="category-checkbox rounded border-gray-300" {{ in_array($child->id, old('category_ids', $topic->categories->pluck('id')->toArray())) ? 'checked' : '' }}>
                                                     <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">📄 {{ $child->name }}</span>
                                                 </label>
                                             @endforeach
@@ -58,17 +44,47 @@
                         </div>
 
                         <div class="mb-6">
-                            <label for="content" class="block text-sm font-medium text-gray-700 dark:text-gray-300">議論の内容・背景</label>
-                            <textarea name="content" id="content" rows="6" class="mt-1 block w-full rounded-md border-gray-300 bg-white text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-900 dark:border-gray-700 dark:text-white" required>{{ old('content', $topic->content) }}</textarea>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">議論の内容・背景（概要）</label>
+                            <textarea name="content" rows="6" class="mt-1 block w-full rounded-md border-gray-300 dark:bg-[#131314] dark:border-gray-700 dark:text-white focus:border-blue-500 focus:ring-blue-500" required>{{ old('content', $topic->content) }}</textarea>
                         </div>
 
-                        <div class="flex items-center justify-between">
-                            <a href="{{ route('topics.show', $topic) }}" class="text-sm bg-gray-100 border border-gray-300 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600 py-2 px-4 rounded transition-colors">
-                                キャンセル
-                            </a>
+                        <div class="mb-6" x-data="{
+                            items: ({{ old('timeline') ? json_encode(old('timeline')) : ($topic->timeline ? json_encode($topic->timeline) : '[]') }}).map(i => {
+                                // 🌟 修正：古いデータ互換のため、is_aiが明示的にfalseでなければtrueにする
+                                return { ...i, is_ai: i.is_ai === false ? false : true };
+                            }),
+                            addItem() { this.items.push({ date: '', event: '', is_ai: false }); },
+                            removeItem(index) { this.items.splice(index, 1); },
+                            markAsEdited(item) { item.is_ai = false; }
+                        }">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">前提となる時系列の編集</label>
+                            <p class="text-xs text-gray-500 mb-3">※行を追加・編集すると「AI生成」バッジは外れます。</p>
                             
-                            <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-colors">
-                                更新する
+                            <div class="space-y-2 border-l-2 border-gray-200 dark:border-gray-700 pl-3 ml-2">
+                                <template x-for="(item, index) in items" :key="index">
+                                    <div class="flex flex-col sm:flex-row sm:items-start gap-2 relative">
+                                        <div class="hidden sm:block absolute left-[-17.5px] top-3 w-1.5 h-1.5 bg-gray-400 dark:bg-gray-500 rounded-full"></div>
+                                        
+                                        <input type="text" :name="'timeline_date['+index+']'" x-model="item.date" @input="markAsEdited(item)" placeholder="202X年X月" class="w-full sm:w-1/4 rounded-md border-gray-300 dark:bg-[#131314] dark:border-gray-700 dark:text-white text-sm focus:border-blue-500 focus:ring-blue-500 py-1.5">
+                                        
+                                        <textarea :name="'timeline_event['+index+']'" x-model="item.event" @input="markAsEdited(item)" placeholder="出来事の要約" rows="1" class="w-full sm:flex-1 rounded-md border-gray-300 dark:bg-[#131314] dark:border-gray-700 dark:text-white text-sm focus:border-blue-500 focus:ring-blue-500 py-1.5"></textarea>
+                                        
+                                        <input type="hidden" :name="'timeline_is_ai['+index+']'" :value="item.is_ai ? 1 : 0">
+                                        
+                                        <button type="button" @click="removeItem(index)" class="text-red-500 hover:text-red-700 px-2 py-1.5 text-sm shrink-0">削除</button>
+                                    </div>
+                                </template>
+                            </div>
+                            
+                            <button type="button" @click="addItem()" class="mt-3 text-xs font-bold text-blue-500 hover:text-blue-700 flex items-center">
+                                ＋ 新しい行を追加する
+                            </button>
+                        </div>
+
+                        <div class="flex items-center justify-end mt-4 border-t border-gray-200 dark:border-gray-800 pt-4">
+                            <a href="{{ route('topics.show', $topic) }}" class="mr-4 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">キャンセル</a>
+                            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-md transition-colors">
+                                変更を保存する
                             </button>
                         </div>
                     </form>
@@ -77,25 +93,20 @@
             </div>
         </div>
     </div>
-
+    
     <script>
+        // カテゴリの最大2つ制限スクリプト（既存のまま）
         document.addEventListener('DOMContentLoaded', function() {
             const checkboxes = document.querySelectorAll('.category-checkbox');
-            
-            const updateCheckboxes = () => {
-                const checkedCount = document.querySelectorAll('.category-checkbox:checked').length;
-                if (checkedCount >= 2) {
-                    checkboxes.forEach(cb => { if (!cb.checked) cb.disabled = true; });
-                } else {
-                    checkboxes.forEach(cb => { cb.disabled = false; });
-                }
-            };
-
-            // 画面を開いた瞬間に、すでに2つ選ばれていたら残りをグレーアウトさせる
-            updateCheckboxes();
-            
             checkboxes.forEach(box => {
-                box.addEventListener('change', updateCheckboxes);
+                box.addEventListener('change', function() {
+                    const checkedCount = document.querySelectorAll('.category-checkbox:checked').length;
+                    if (checkedCount >= 2) {
+                        checkboxes.forEach(cb => { if (!cb.checked) cb.disabled = true; });
+                    } else {
+                        checkboxes.forEach(cb => { cb.disabled = false; });
+                    }
+                });
             });
         });
     </script>

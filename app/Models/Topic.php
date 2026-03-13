@@ -14,6 +14,12 @@ class Topic extends Model
         'title',
         'content',
         'user_id',
+        'timeline',
+    ];
+
+    // 「timeline はJSON配列として扱ってね」という指示
+    protected $casts = [
+        'timeline' => 'array',
     ];
 
     // 🔽 「このトピックは1人のユーザー（作成者）のものです」という関係性を定義

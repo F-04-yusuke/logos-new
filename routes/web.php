@@ -32,6 +32,12 @@ Route::post('/topics', [TopicController::class, 'store'])->name('topics.store')-
 // トピック詳細画面を表示するルール（※必ず create のルールより下に書いてください）
 Route::get('/topics/{topic}', [TopicController::class, 'show'])->name('topics.show')->middleware('auth');
 
+// AIによる時系列生成ルート
+Route::post('/topics/{topic}/timeline', [TopicController::class, 'generateTimeline'])->name('topics.timeline')->middleware('auth');
+
+// AIによる時系列アップデート（更新）ルート
+Route::post('/topics/{topic}/timeline-update', [\App\Http\Controllers\TopicController::class, 'updateTimeline'])->name('topics.timeline_update')->middleware('auth');
+
 // トピックの詳細画面から「投稿（Post）」を保存するためのルール
 Route::post('/topics/{topic}/posts', [\App\Http\Controllers\PostController::class, 'store'])->name('posts.store')->middleware('auth');
 
