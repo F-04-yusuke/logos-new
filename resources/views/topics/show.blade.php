@@ -226,56 +226,83 @@
 
                 <div x-show="isAnalysisModalOpen" x-cloak class="relative z-50" aria-labelledby="modal-title" role="dialog" aria-modal="true">
                     <div x-show="isAnalysisModalOpen" x-transition.opacity class="fixed inset-0 bg-black/60 dark:bg-black/80 transition-opacity"></div>
+                    
                     <div class="fixed inset-0 z-10 overflow-y-auto">
                         <div class="flex min-h-full items-end justify-center p-0 sm:items-center sm:p-4">
-                            <div x-show="isAnalysisModalOpen" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-full sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-full sm:translate-y-0 sm:scale-95" @click.away="isAnalysisModalOpen = false" class="relative transform overflow-hidden bg-white dark:bg-[#18191a] rounded-t-2xl sm:rounded-xl border-t sm:border border-gray-200 dark:border-gray-800 text-left shadow-2xl transition-all w-full h-[85vh] sm:h-auto sm:max-w-xl flex flex-col">
-
-                                <div class="px-4 py-3 sm:px-6 sm:py-4 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-[#1e1f20]">
-                                    <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 flex items-center">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                                        </svg>
-                                        マイページから投稿
-                                    </h3>
-                                    <button @click="isAnalysisModalOpen = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 focus:outline-none transition-colors"><span class="text-2xl leading-none">&times;</span></button>
+                            
+                            <div x-show="isAnalysisModalOpen" 
+                                 x-transition:enter="ease-out duration-300" 
+                                 x-transition:enter-start="opacity-0 translate-y-full sm:translate-y-0 sm:scale-95" 
+                                 x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" 
+                                 x-transition:leave="ease-in duration-200" 
+                                 x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" 
+                                 x-transition:leave-end="opacity-0 translate-y-full sm:translate-y-0 sm:scale-95" 
+                                 @click.away="isAnalysisModalOpen = false" 
+                                 class="relative transform overflow-hidden bg-white dark:bg-[#1e1f20] rounded-t-2xl sm:rounded-2xl border border-gray-200 dark:border-gray-700 text-left shadow-2xl transition-all w-full sm:my-8 sm:w-full sm:max-w-2xl p-6">
+                                
+                                <div class="flex justify-between items-center mb-4">
+                                    <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100">分析・図解の投稿</h3>
+                                    <button @click="isAnalysisModalOpen = false" class="text-gray-400 hover:text-gray-500">
+                                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                                    </button>
                                 </div>
 
-                                <div class="p-4 sm:p-6 overflow-y-auto flex-1 bg-white dark:bg-[#131314]">
-                                    <p class="text-xs text-gray-500 dark:text-gray-400 mb-4">保存済みで、まだ他のトピックに公開していない分析・図解の一覧です。</p>
-
-                                    @if(isset($myAvailableAnalyses) && $myAvailableAnalyses->isEmpty())
-                                    <div class="text-center py-6 border border-gray-200 dark:border-gray-800 rounded-lg">
-                                        <p class="text-sm text-gray-500 mb-2">公開できる分析・図解がありません。</p>
-                                        <a href="{{ route('tools.tree') }}" class="text-xs text-blue-500 hover:underline">ツールを使って新しく作成する</a>
+                                <div x-data="{ uploadTab: 'select' }">
+                                    <div class="flex border-b border-gray-200 dark:border-gray-700 mb-4">
+                                        <button @click="uploadTab = 'select'" :class="uploadTab === 'select' ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400 font-bold' : 'text-gray-500 dark:text-gray-400'" class="pb-2 px-4 text-sm transition-colors">作成済みツールから選択</button>
+                                        <button @click="uploadTab = 'upload'" :class="uploadTab === 'upload' ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400 font-bold' : 'text-gray-500 dark:text-gray-400'" class="pb-2 px-4 text-sm transition-colors flex items-center">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                                            オリジナル画像のアップロード
+                                        </button>
                                     </div>
-                                    @else
-                                    <div class="space-y-3">
-                                        @foreach($myAvailableAnalyses as $analysis)
-                                        <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-3 bg-gray-50 dark:bg-[#1e1f20] flex justify-between items-center">
-                                            <div>
-                                                <div class="mb-1">
-                                                    @if($analysis->type === 'tree') <span class="text-[10px] bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-400 px-1.5 py-0.5 rounded">ロジックツリー</span>
-                                                    @elseif($analysis->type === 'matrix') <span class="text-[10px] bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-400 px-1.5 py-0.5 rounded">総合評価表</span>
-                                                    @elseif($analysis->type === 'swot') <span class="text-[10px] bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-400 px-1.5 py-0.5 rounded">SWOT分析</span>
-                                                    @endif
-                                                </div>
-                                                <h4 class="text-sm font-bold text-gray-900 dark:text-gray-100">{{ $analysis->title }}</h4>
-                                                <span class="text-[10px] text-gray-400">作成日: {{ $analysis->created_at->format('Y-m-d') }}</span>
+
+                                    <div x-show="uploadTab === 'select'">
+                                        @if(auth()->user()->analyses()->whereNull('topic_id')->count() === 0)
+                                            <div class="text-center py-8">
+                                                <p class="text-gray-500 dark:text-gray-400 text-sm mb-4">マイページに公開可能な分析データがありません。</p>
+                                                <a href="{{ route('dashboard') }}" class="text-blue-500 hover:underline text-sm font-bold">マイページで新しく作成する</a>
                                             </div>
-
-                                            <form method="POST" action="{{ route('tools.publish', $analysis) }}">
-                                                @csrf
-                                                <input type="hidden" name="topic_id" value="{{ $topic->id }}">
-                                                <button type="submit" class="bg-yellow-500 hover:bg-yellow-600 text-white text-xs font-bold py-1.5 px-3 rounded shadow-sm transition-colors">
-                                                    このトピックに投稿
-                                                </button>
-                                            </form>
-                                        </div>
-                                        @endforeach
+                                        @else
+                                            <div class="space-y-3 max-h-96 overflow-y-auto pr-2">
+                                                @foreach(auth()->user()->analyses()->whereNull('topic_id')->get() as $analysis)
+                                                    <div class="p-3 border border-gray-200 dark:border-gray-700 rounded-lg flex justify-between items-center bg-gray-50 dark:bg-[#131314]">
+                                                        <div>
+                                                            <span class="text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 px-2 py-0.5 rounded mr-2">{{ $analysis->type === 'tree' ? 'ロジックツリー' : ($analysis->type === 'matrix' ? '評価表' : 'SWOT') }}</span>
+                                                            <span class="font-bold text-gray-800 dark:text-gray-200 text-sm">{{ $analysis->title }}</span>
+                                                        </div>
+                                                        <form method="POST" action="{{ route('tools.publish', $analysis) }}" class="m-0 p-0">
+                                                            @csrf
+                                                            <input type="hidden" name="topic_id" value="{{ $topic->id }}">
+                                                            <button type="submit" class="bg-yellow-500 hover:bg-yellow-600 text-white text-xs font-bold py-1.5 px-3 rounded shadow-sm transition-colors">
+                                                                このトピックに投稿
+                                                            </button>
+                                                        </form>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        @endif
                                     </div>
-                                    @endif
+
+                                    <div x-show="uploadTab === 'upload'" x-cloak>
+                                        <form method="POST" action="{{ route('topics.analyses.image', $topic) }}" enctype="multipart/form-data" class="bg-gray-50 dark:bg-[#131314] p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                                            @csrf
+                                            <div class="mb-4">
+                                                <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">図解のタイトル</label>
+                                                <input type="text" name="title" required class="w-full text-sm rounded border-gray-300 dark:border-gray-700 dark:bg-[#1e1f20] dark:text-white" placeholder="例：〇〇問題のステークホルダーマップ">
+                                            </div>
+                                            <div class="mb-4">
+                                                <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">画像ファイルを選択 (JPG, PNG)</label>
+                                                <input type="file" name="image" accept="image/*" required class="w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-bold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 dark:file:bg-[#1e1f20] dark:file:text-blue-400 dark:hover:file:bg-gray-800 cursor-pointer">
+                                                <p class="text-xs text-gray-400 mt-2">※ファイルサイズは最大5MBまで。オリジナルで作成した図解やグラフのみアップロード可能です。</p>
+                                            </div>
+                                            <div class="flex justify-end pt-2 border-t border-gray-200 dark:border-gray-700">
+                                                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold py-2 px-6 rounded transition-colors">アップロードして公開</button>
+                                            </div>
+                                        </form>
+                                    </div>
                                 </div>
                             </div>
+
                         </div>
                     </div>
                 </div>

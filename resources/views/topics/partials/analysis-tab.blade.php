@@ -17,7 +17,7 @@
         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
         </svg>
-        <span class="hidden sm:inline">マイページから投稿</span>
+        <span class="hidden sm:inline">分析・図解を投稿</span>
     </button>
 </div>
 
@@ -28,7 +28,7 @@
     </svg>
     <p class="text-sm text-gray-500 dark:text-gray-400 font-bold mb-1">まだ分析・図解は投稿されていません</p>
     <p class="text-xs text-gray-400 dark:text-gray-500 text-center max-w-sm">
-        プレミアムプランに登録すると、マイページで作成した「ロジックツリー」や「総合評価表」をここに公開して、議論を深めることができます。
+        プレミアムプランに登録すると、オリジナル図解をアップロードしたり、「ロジックツリー」や「総合評価表」を作成してここに公開することができます。
     </p>
 </div>
 @else
@@ -43,6 +43,8 @@
                 @elseif($analysis->type === 'swot')
                 @php $isPest = isset($analysis->data['framework']) && $analysis->data['framework'] === 'PEST'; @endphp
                 <span class="inline-block px-2 py-0.5 text-xs font-bold rounded border border-green-200 text-green-600 dark:border-green-800 dark:text-green-400">{{ $isPest ? 'PEST分析' : 'SWOT分析' }}</span>
+                @elseif($analysis->type === 'image')
+                <span class="inline-block px-2 py-0.5 text-xs font-bold rounded border border-orange-200 text-orange-600 dark:border-orange-800 dark:text-orange-400">オリジナル図解</span>
                 @endif
             </div>
             <div class="text-right text-xs text-gray-500 dark:text-gray-400">
@@ -60,80 +62,85 @@
             @endif
 
             @if($analysis->type === 'tree' && !empty($previewData))
-            @php
-            $nodes = isset($previewData['nodes']) ? $previewData['nodes'] : $previewData;
-            $meta = $previewData['meta'] ?? null;
-            @endphp
+                @php
+                $nodes = isset($previewData['nodes']) ? $previewData['nodes'] : $previewData;
+                $meta = $previewData['meta'] ?? null;
+                @endphp
 
-            @if($meta && (!empty($meta['url']) || !empty($meta['description'])))
-            <div class="mb-4 p-3 bg-white dark:bg-[#1e1f20] rounded border border-gray-200 dark:border-gray-700 shadow-sm">
-                <div class="text-[10px] font-bold text-blue-600 dark:text-blue-400 mb-1 flex items-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>事前情報</div>
-                @if(!empty($meta['description'])) <p class="text-xs text-gray-800 dark:text-gray-300 mb-1.5">{{ $meta['description'] }}</p> @endif
-                @if(!empty($meta['url'])) <a href="{{ $meta['url'] }}" target="_blank" class="text-xs text-blue-500 hover:underline truncate block">{{ $meta['url'] }}</a> @endif
-            </div>
-            @endif
-
-            <div class="space-y-3">
-                @foreach(array_slice($nodes, 0, 5) as $node)
-                <div class="flex gap-2">
-                    <span class="font-bold text-blue-500 shrink-0">{{ $node['speaker'] ?? '' }}:</span>
-                    <span class="text-gray-700 dark:text-gray-300 truncate">{{ $node['text'] ?? '' }}</span>
+                @if($meta && (!empty($meta['url']) || !empty($meta['description'])))
+                <div class="mb-4 p-3 bg-white dark:bg-[#1e1f20] rounded border border-gray-200 dark:border-gray-700 shadow-sm">
+                    <div class="text-[10px] font-bold text-blue-600 dark:text-blue-400 mb-1 flex items-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>事前情報</div>
+                    @if(!empty($meta['description'])) <p class="text-xs text-gray-800 dark:text-gray-300 mb-1.5">{{ $meta['description'] }}</p> @endif
+                    @if(!empty($meta['url'])) <a href="{{ $meta['url'] }}" target="_blank" class="text-xs text-blue-500 hover:underline truncate block">{{ $meta['url'] }}</a> @endif
                 </div>
-                @if(!empty($node['children']))
-                @foreach(array_slice($node['children'], 0, 1) as $child)
-                <div class="ml-4 flex gap-2 border-l-2 border-gray-300 dark:border-gray-700 pl-2">
-                    <span class="font-bold text-gray-500 shrink-0">↳ {{ $child['speaker'] ?? '' }}:</span>
-                    <span class="text-gray-600 dark:text-gray-400 truncate">{{ $child['text'] ?? '' }}</span>
-                </div>
-                @endforeach
                 @endif
-                @endforeach
-            </div>
-            @elseif($analysis->type === 'matrix' && isset($previewData['items']))
-            <div>
-                <div class="font-bold text-gray-500 mb-2">【評価項目一覧】</div>
-                <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-2 ml-1">
-                    @foreach(array_slice($previewData['items'], 0, 5) as $item)
-                    <li class="truncate">{{ $item['itemTitle'] ?? '' }}</li>
+
+                <div class="space-y-3">
+                    @foreach(array_slice($nodes, 0, 5) as $node)
+                    <div class="flex gap-2">
+                        <span class="font-bold text-blue-500 shrink-0">{{ $node['speaker'] ?? '' }}:</span>
+                        <span class="text-gray-700 dark:text-gray-300 truncate">{{ $node['text'] ?? '' }}</span>
+                    </div>
+                    @if(!empty($node['children']))
+                    @foreach(array_slice($node['children'], 0, 1) as $child)
+                    <div class="ml-4 flex gap-2 border-l-2 border-gray-300 dark:border-gray-700 pl-2">
+                        <span class="font-bold text-gray-500 shrink-0">↳ {{ $child['speaker'] ?? '' }}:</span>
+                        <span class="text-gray-600 dark:text-gray-400 truncate">{{ $child['text'] ?? '' }}</span>
+                    </div>
                     @endforeach
-                </ul>
-            </div>
+                    @endif
+                    @endforeach
+                </div>
+            @elseif($analysis->type === 'matrix' && isset($previewData['items']))
+                <div>
+                    <div class="font-bold text-gray-500 mb-2">【評価項目一覧】</div>
+                    <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-2 ml-1">
+                        @foreach(array_slice($previewData['items'], 0, 5) as $item)
+                        <li class="truncate">{{ $item['itemTitle'] ?? '' }}</li>
+                        @endforeach
+                    </ul>
+                </div>
             @elseif($analysis->type === 'swot')
-            @php
-            $isPest = isset($previewData['framework']) && $previewData['framework'] === 'PEST';
-            $b1 = $previewData['box1'] ?? $previewData['strengths'] ?? [];
-            $b2 = $previewData['box2'] ?? $previewData['weaknesses'] ?? [];
-            $b3 = $previewData['box3'] ?? $previewData['opportunities'] ?? [];
-            $b4 = $previewData['box4'] ?? $previewData['threats'] ?? [];
-            @endphp
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                    <span class="font-bold text-blue-500 mb-1 inline-block">{{ $isPest ? 'P (政治)' : 'S (強み)' }}:</span>
-                    <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1">
-                        @forelse(array_slice($b1, 0, 3) as $txt) <li class="truncate">{{ $txt }}</li> @empty <li class="text-gray-500">記載なし</li> @endforelse
-                    </ul>
+                @php
+                $isPest = isset($previewData['framework']) && $previewData['framework'] === 'PEST';
+                $b1 = $previewData['box1'] ?? $previewData['strengths'] ?? [];
+                $b2 = $previewData['box2'] ?? $previewData['weaknesses'] ?? [];
+                $b3 = $previewData['box3'] ?? $previewData['opportunities'] ?? [];
+                $b4 = $previewData['box4'] ?? $previewData['threats'] ?? [];
+                @endphp
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <span class="font-bold text-blue-500 mb-1 inline-block">{{ $isPest ? 'P (政治)' : 'S (強み)' }}:</span>
+                        <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1">
+                            @forelse(array_slice($b1, 0, 3) as $txt) <li class="truncate">{{ $txt }}</li> @empty <li class="text-gray-500">記載なし</li> @endforelse
+                        </ul>
+                    </div>
+                    <div>
+                        <span class="font-bold text-red-500 mb-1 inline-block">{{ $isPest ? 'E (経済)' : 'W (弱み)' }}:</span>
+                        <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1">
+                            @forelse(array_slice($b2, 0, 3) as $txt) <li class="truncate">{{ $txt }}</li> @empty <li class="text-gray-500">記載なし</li> @endforelse
+                        </ul>
+                    </div>
+                    <div>
+                        <span class="font-bold text-green-500 mb-1 inline-block">{{ $isPest ? 'S (社会)' : 'O (機会)' }}:</span>
+                        <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1">
+                            @forelse(array_slice($b3, 0, 3) as $txt) <li class="truncate">{{ $txt }}</li> @empty <li class="text-gray-500">記載なし</li> @endforelse
+                        </ul>
+                    </div>
+                    <div>
+                        <span class="font-bold text-yellow-500 mb-1 inline-block">{{ $isPest ? 'T (技術)' : 'T (脅威)' }}:</span>
+                        <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1">
+                            @forelse(array_slice($b4, 0, 3) as $txt) <li class="truncate">{{ $txt }}</li> @empty <li class="text-gray-500">記載なし</li> @endforelse
+                        </ul>
+                    </div>
                 </div>
-                <div>
-                    <span class="font-bold text-red-500 mb-1 inline-block">{{ $isPest ? 'E (経済)' : 'W (弱み)' }}:</span>
-                    <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1">
-                        @forelse(array_slice($b2, 0, 3) as $txt) <li class="truncate">{{ $txt }}</li> @empty <li class="text-gray-500">記載なし</li> @endforelse
-                    </ul>
+            @elseif($analysis->type === 'image' && isset($previewData['image_path']))
+                <div class="font-bold text-base text-gray-900 dark:text-gray-100 mb-3">{{ $analysis->title }}</div>
+                <div class="w-full flex justify-center bg-white dark:bg-[#1e1f20] rounded p-2">
+                    <img src="{{ asset('storage/' . $previewData['image_path']) }}" alt="{{ $analysis->title }}" class="max-w-full max-h-[350px] object-contain rounded border border-gray-200 dark:border-gray-700 shadow-sm">
                 </div>
-                <div>
-                    <span class="font-bold text-green-500 mb-1 inline-block">{{ $isPest ? 'S (社会)' : 'O (機会)' }}:</span>
-                    <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1">
-                        @forelse(array_slice($b3, 0, 3) as $txt) <li class="truncate">{{ $txt }}</li> @empty <li class="text-gray-500">記載なし</li> @endforelse
-                    </ul>
-                </div>
-                <div>
-                    <span class="font-bold text-yellow-500 mb-1 inline-block">{{ $isPest ? 'T (技術)' : 'T (脅威)' }}:</span>
-                    <ul class="list-disc list-inside text-gray-700 dark:text-gray-300 space-y-1">
-                        @forelse(array_slice($b4, 0, 3) as $txt) <li class="truncate">{{ $txt }}</li> @empty <li class="text-gray-500">記載なし</li> @endforelse
-                    </ul>
-                </div>
-            </div>
             @endif
         </div>
 

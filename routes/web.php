@@ -38,6 +38,9 @@ Route::post('/topics/{topic}/timeline', [TopicController::class, 'generateTimeli
 // AIによる時系列アップデート（更新）ルート
 Route::post('/topics/{topic}/timeline-update', [\App\Http\Controllers\TopicController::class, 'updateTimeline'])->name('topics.timeline_update')->middleware('auth');
 
+// トピックへの画像直接アップロードルート
+Route::post('/topics/{topic}/analyses/image', [\App\Http\Controllers\TopicImageController::class, 'store'])->name('topics.analyses.image')->middleware('auth');
+
 // トピックの詳細画面から「投稿（Post）」を保存するためのルール
 Route::post('/topics/{topic}/posts', [\App\Http\Controllers\PostController::class, 'store'])->name('posts.store')->middleware('auth');
 

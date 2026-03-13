@@ -80,4 +80,11 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Comment::class, 'comment_likes')->withTimestamps();
     }
+
+    // 1人のユーザーは複数の分析・図解を作れる（1対多）
+    public function analyses()
+    {
+        return $this->hasMany(Analysis::class);
+    }
+
 }
