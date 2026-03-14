@@ -46,17 +46,26 @@
                 <h4 class="font-bold text-sm text-gray-900 dark:text-gray-100 group-hover:text-blue-500 dark:group-hover:text-blue-400 line-clamp-2 leading-tight transition-colors">{{ $post->title ?: 'タイトルを取得できませんでした' }}</h4>
             </a>
         </div>
+        
         <div class="md:w-3/4 flex flex-col justify-between">
             <div>
-                <div class="flex justify-between items-start mb-2">
-                    <span class="inline-block px-2 py-0.5 text-xs rounded border border-gray-200 text-gray-600 dark:border-gray-700 dark:text-gray-400">{{ $post->category }}</span>
-                    <div class="text-right text-xs text-gray-500 dark:text-gray-400">
-                        <span class="font-medium text-gray-700 dark:text-gray-300">{{ $post->user->name }}</span><br>
-                        <span>{{ $post->created_at->format('Y-m-d H:i') }}</span>
+                <div class="flex items-center gap-2 mb-2">
+                    @if($post->user->avatar)
+                        <img class="h-6 w-6 rounded-full object-cover border border-gray-200 dark:border-gray-700" src="{{ asset('storage/' . $post->user->avatar) }}" alt="Avatar" />
+                    @else
+                        <div class="h-6 w-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center border border-gray-200 dark:border-gray-700">
+                            <svg class="h-4 w-4 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                        </div>
+                    @endif
+                    <div class="flex items-baseline gap-2">
+                        <span class="font-bold text-[13px] text-gray-900 dark:text-gray-100">{{ $post->user->name }}</span>
+                        <span class="text-[11px] text-gray-500">{{ $post->created_at->diffForHumans() }}</span>
                     </div>
+                    <span class="ml-2 inline-block px-2 py-0.5 text-[10px] font-bold rounded border border-gray-200 text-gray-600 dark:border-gray-700 dark:text-gray-400">{{ $post->category }}</span>
                 </div>
+
                 @if ($post->comment)
-                <div class="text-gray-800 dark:text-gray-300 text-sm whitespace-pre-wrap mt-1">{{ $post->comment }}</div>
+                <div class="text-[13px] text-gray-800 dark:text-gray-300 whitespace-pre-wrap mt-1 leading-relaxed">{{ $post->comment }}</div>
                 @endif
 
                 @if ($post->supplement)
@@ -64,7 +73,7 @@
                     <span class="font-bold text-blue-600 dark:text-blue-400 text-[10px] block mb-1">✅ 投稿者からの補足</span>
                     <p class="text-gray-800 dark:text-gray-200 whitespace-pre-wrap">{{ $post->supplement }}</p>
                 </div>
-            @elseif ($post->user_id === auth()->id())
+                @elseif ($post->user_id === auth()->id())
                 <div x-data="{ openSupplement: false }" class="mt-2">
                     <button @click="openSupplement = !openSupplement" x-show="!openSupplement" type="button" class="text-[11px] text-blue-500 hover:text-blue-700 font-bold transition-colors">
                         ＋ 補足を追加する（※1回のみ）
@@ -78,9 +87,10 @@
                         </div>
                     </form>
                 </div>
-            @endif
+                @endif
 
             </div>
+            
             <div class="mt-3 flex items-center justify-end gap-3">
                 @if ($post->user_id === auth()->id())
                 <form method="POST" action="{{ route('posts.destroy', $post) }}" onsubmit="return confirm('本当に削除しますか？');" class="m-0 p-0">

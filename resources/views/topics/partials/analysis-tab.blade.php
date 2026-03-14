@@ -32,28 +32,41 @@
     </p>
 </div>
 @else
-<div class="space-y-3">
+<div class="space-y-4">
     @foreach($topicAnalyses as $analysis)
     <div class="p-4 bg-white dark:bg-[#1e1f20] rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm transition-colors flex flex-col gap-3">
 
-        <div class="flex justify-between items-start mb-1">
-            <div class="flex items-center gap-2 mt-1">
-                @if($analysis->type === 'tree') <span class="inline-block px-2 py-0.5 text-xs font-bold rounded border border-blue-200 text-blue-600 dark:border-blue-800 dark:text-blue-400">ロジックツリー</span>
-                @elseif($analysis->type === 'matrix') <span class="inline-block px-2 py-0.5 text-xs font-bold rounded border border-purple-200 text-purple-600 dark:border-purple-800 dark:text-purple-400">総合評価表</span>
-                @elseif($analysis->type === 'swot')
-                @php $isPest = isset($analysis->data['framework']) && $analysis->data['framework'] === 'PEST'; @endphp
-                <span class="inline-block px-2 py-0.5 text-xs font-bold rounded border border-green-200 text-green-600 dark:border-green-800 dark:text-green-400">{{ $isPest ? 'PEST分析' : 'SWOT分析' }}</span>
-                @elseif($analysis->type === 'image')
-                <span class="inline-block px-2 py-0.5 text-xs font-bold rounded border border-orange-200 text-orange-600 dark:border-orange-800 dark:text-orange-400">オリジナル図解</span>
+        <div class="flex items-center gap-3 mb-1">
+            <div class="shrink-0 mt-0.5">
+                @if($analysis->user->avatar)
+                    <img class="h-8 w-8 rounded-full object-cover border border-gray-200 dark:border-gray-700" src="{{ asset('storage/' . $analysis->user->avatar) }}" alt="Avatar" />
+                @else
+                    <div class="h-8 w-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center border border-gray-200 dark:border-gray-700">
+                        <svg class="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                    </div>
                 @endif
             </div>
-            <div class="text-right text-xs text-gray-500 dark:text-gray-400">
-                <span class="font-medium text-gray-700 dark:text-gray-300">{{ $analysis->user->name }}</span><br>
-                <span>{{ $analysis->created_at->format('Y-m-d H:i') }}</span>
+            
+            <div class="flex flex-col">
+                <div class="flex items-baseline gap-2">
+                    <span class="font-bold text-[14px] text-gray-900 dark:text-gray-100">{{ $analysis->user->name }}</span>
+                    <span class="text-[11px] text-gray-500">{{ $analysis->created_at->diffForHumans() }}</span>
+                </div>
+                <div class="mt-0.5">
+                    @if($analysis->type === 'tree') <span class="inline-block px-2 py-0.5 text-[10px] font-bold rounded border border-blue-200 text-blue-600 dark:border-blue-800 dark:text-blue-400">ロジックツリー</span>
+                    @elseif($analysis->type === 'matrix') <span class="inline-block px-2 py-0.5 text-[10px] font-bold rounded border border-purple-200 text-purple-600 dark:border-purple-800 dark:text-purple-400">総合評価表</span>
+                    @elseif($analysis->type === 'swot')
+                    @php $isPest = isset($analysis->data['framework']) && $analysis->data['framework'] === 'PEST'; @endphp
+                    <span class="inline-block px-2 py-0.5 text-[10px] font-bold rounded border border-green-200 text-green-600 dark:border-green-800 dark:text-green-400">{{ $isPest ? 'PEST分析' : 'SWOT分析' }}</span>
+                    @elseif($analysis->type === 'image')
+                    <span class="inline-block px-2 py-0.5 text-[10px] font-bold rounded border border-orange-200 text-orange-600 dark:border-orange-800 dark:text-orange-400">オリジナル図解</span>
+                    @endif
+                </div>
             </div>
         </div>
 
-        <div class="rounded-md border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#131314] p-4 text-sm overflow-hidden w-full flex-1" style="max-height: 400px; -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent 100%); mask-image: linear-gradient(to bottom, black 80%, transparent 100%);">
+        <div class="rounded-md border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#131314] p-4 text-sm overflow-hidden w-full flex-1 relative" style="max-height: 400px;">
+            <div class="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-gray-50 to-transparent dark:from-[#131314] dark:to-transparent pointer-events-none"></div>
 
             @php $previewData = $analysis->data; @endphp
 
@@ -165,12 +178,12 @@
             </div>
         @endif
 
-        <div class="mt-1 flex items-center justify-between">
+        <div class="mt-1 flex items-center justify-between border-t border-gray-100 dark:border-gray-800 pt-3">
             <a href="{{ route('analyses.show', $analysis) }}" class="text-xs font-bold text-blue-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex items-center">
                 もっと見る <span class="ml-1 text-[10px]">▶</span>
             </a>
 
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-4">
                 @if ($analysis->user_id === auth()->id())
                 <form method="POST" action="{{ route('analyses.destroy', $analysis) }}" onsubmit="return confirm('この分析・図解を本当に削除しますか？');" class="m-0 p-0">
                     @csrf

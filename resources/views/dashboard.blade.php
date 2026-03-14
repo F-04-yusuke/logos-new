@@ -40,8 +40,20 @@
                                 <div class="md:w-3/4 flex flex-col justify-between">
                                     <div>
                                         <div class="flex justify-between items-start mb-2">
+                                            <div class="flex items-center gap-2">
+                                                @if(auth()->user()->avatar)
+                                                    <img class="h-6 w-6 rounded-full object-cover border border-gray-200 dark:border-gray-700" src="{{ asset('storage/' . auth()->user()->avatar) }}" alt="Avatar" />
+                                                @else
+                                                    <div class="h-6 w-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center border border-gray-200 dark:border-gray-700">
+                                                        <svg class="h-4 w-4 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                                                    </div>
+                                                @endif
+                                                <div class="flex items-baseline gap-2">
+                                                    <span class="font-bold text-[13px] text-gray-900 dark:text-gray-100">{{ auth()->user()->name }}</span>
+                                                    <span class="text-[11px] text-gray-500">{{ $post->created_at->diffForHumans() }}</span>
+                                                </div>
+                                            </div>
                                             <span class="inline-block px-2 py-0.5 text-xs rounded border border-gray-200 text-gray-600 dark:border-gray-700 dark:text-gray-400">{{ $post->category }}</span>
-                                            <div class="text-right text-xs text-gray-500"><span>{{ $post->created_at->format('Y-m-d H:i') }}</span></div>
                                         </div>
                                         <p class="text-xs text-gray-400 mb-1">トピック: <a href="{{ route('topics.show', $post->topic_id) }}" class="text-blue-500 hover:underline">{{ $post->topic->title }}</a></p>
                                         @if ($post->comment)
@@ -75,12 +87,22 @@
                                 
                                 <div class="flex justify-between items-center mb-3 pb-2 border-b border-gray-100 dark:border-gray-800">
                                     <p class="text-xs text-gray-500">トピック: <a href="{{ route('topics.show', $comment->topic_id) }}" class="text-blue-500 hover:underline font-bold">{{ $comment->topic->title }}</a></p>
-                                    <span class="text-xs text-gray-500">{{ $comment->created_at->format('Y-m-d H:i') }}</span>
                                 </div>
                                 
                                 <div>
-                                    <div class="flex items-center gap-2 mb-1">
-                                        <span class="text-[10px] bg-gray-100 text-gray-800 dark:bg-[#1e1f20] dark:text-gray-300 px-1.5 py-0.5 rounded font-bold">あなたの投稿</span>
+                                    <div class="flex items-center gap-2 mb-2">
+                                        @if(auth()->user()->avatar)
+                                            <img class="h-6 w-6 rounded-full object-cover border border-gray-200 dark:border-gray-700" src="{{ asset('storage/' . auth()->user()->avatar) }}" alt="Avatar" />
+                                        @else
+                                            <div class="h-6 w-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center border border-gray-200 dark:border-gray-700">
+                                                <svg class="h-4 w-4 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                                            </div>
+                                        @endif
+                                        <div class="flex items-baseline gap-2">
+                                            <span class="font-bold text-[13px] text-gray-900 dark:text-gray-100">{{ auth()->user()->name }}</span>
+                                            <span class="text-[11px] text-gray-500">{{ $comment->created_at->diffForHumans() }}</span>
+                                        </div>
+                                        <span class="ml-2 text-[10px] bg-gray-100 text-gray-800 dark:bg-[#1e1f20] dark:text-gray-300 px-1.5 py-0.5 rounded font-bold">あなたの投稿</span>
                                     </div>
                                     <p class="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap">{{ $comment->body }}</p>
                                     
@@ -95,8 +117,18 @@
                                         @foreach($comment->replies as $reply)
                                             <div class="relative">
                                                 <div class="flex justify-between items-center mb-1">
+                                                    <div class="flex items-center gap-2">
+                                                        @if($reply->user->avatar)
+                                                            <img class="h-5 w-5 rounded-full object-cover border border-gray-200 dark:border-gray-700" src="{{ asset('storage/' . $reply->user->avatar) }}" alt="Avatar" />
+                                                        @else
+                                                            <div class="h-5 w-5 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center border border-gray-200 dark:border-gray-700">
+                                                                <svg class="h-3 w-3 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                                                            </div>
+                                                        @endif
+                                                        <span class="font-bold text-xs text-gray-900 dark:text-gray-100">{{ $reply->user->name }}</span>
+                                                        <span class="text-[10px] text-gray-500">{{ $reply->created_at->diffForHumans() }}</span>
+                                                    </div>
                                                     <span class="text-[10px] bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 px-1.5 py-0.5 rounded font-bold">投稿者（補足）</span>
-                                                    <span class="text-[10px] text-gray-500">{{ $reply->created_at->format('Y-m-d H:i') }}</span>
                                                 </div>
                                                 <p class="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap">{{ $reply->body }}</p>
                                                 
@@ -119,8 +151,20 @@
                         @forelse(auth()->user()->topics()->latest()->get() as $topic)
                             <div class="p-4 bg-white dark:bg-[#131314] rounded-lg border border-gray-200 dark:border-gray-800 flex justify-between items-center">
                                 <div>
+                                    <div class="flex items-center gap-2 mb-1">
+                                        @if(auth()->user()->avatar)
+                                            <img class="h-6 w-6 rounded-full object-cover border border-gray-200 dark:border-gray-700" src="{{ asset('storage/' . auth()->user()->avatar) }}" alt="Avatar" />
+                                        @else
+                                            <div class="h-6 w-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center border border-gray-200 dark:border-gray-700">
+                                                <svg class="h-4 w-4 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                                            </div>
+                                        @endif
+                                        <div class="flex items-baseline gap-2">
+                                            <span class="font-bold text-[13px] text-gray-900 dark:text-gray-100">{{ auth()->user()->name }}</span>
+                                            <span class="text-[11px] text-gray-500">{{ $topic->created_at->diffForHumans() }}</span>
+                                        </div>
+                                    </div>
                                     <a href="{{ route('topics.show', $topic) }}" class="font-bold text-blue-500 hover:underline">{{ $topic->title }}</a>
-                                    <p class="text-xs text-gray-500 mt-1">作成日: {{ $topic->created_at->format('Y-m-d H:i') }}</p>
                                 </div>
                                 <div class="flex items-center gap-3 shrink-0">
                                     <a href="{{ route('topics.edit', $topic) }}" class="text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">編集</a>
@@ -140,6 +184,20 @@
                         @forelse(auth()->user()->analyses()->latest()->get() as $analysis)
                             <div class="p-4 bg-gray-50 dark:bg-[#131314] rounded-lg border border-gray-200 dark:border-gray-800 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                                 <div class="flex-1">
+                                    <div class="flex items-center gap-2 mb-2">
+                                        @if(auth()->user()->avatar)
+                                            <img class="h-6 w-6 rounded-full object-cover border border-gray-200 dark:border-gray-700" src="{{ asset('storage/' . auth()->user()->avatar) }}" alt="Avatar" />
+                                        @else
+                                            <div class="h-6 w-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center border border-gray-200 dark:border-gray-700">
+                                                <svg class="h-4 w-4 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                                            </div>
+                                        @endif
+                                        <div class="flex items-baseline gap-2">
+                                            <span class="font-bold text-[13px] text-gray-900 dark:text-gray-100">{{ auth()->user()->name }}</span>
+                                            <span class="text-[11px] text-gray-500">{{ $analysis->created_at->diffForHumans() }}</span>
+                                        </div>
+                                    </div>
+
                                     <div class="flex items-center gap-2 mb-2">
                                         <span class="text-[10px] font-bold px-2 py-0.5 rounded border border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-400">{{ $analysis->type }}</span>
                                         <span class="font-bold text-gray-800 dark:text-gray-200 text-sm">{{ $analysis->title }}</span>

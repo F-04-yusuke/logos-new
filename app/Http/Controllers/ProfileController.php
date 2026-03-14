@@ -26,15 +26,40 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        // ▼▼▼ ここから上書き ▼▼▼
+        $user = $request->user();
+        $validated = $request->validated();
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        // 🌟 追加：名前が変更されようとしているかチェック
+        if ($user->name !== $validated['name']) {
+            // 前回変更時から7日経っていない場合はエラーを返す
+            if ($user->name_updated_at && \Carbon\Carbon::parse($user->name_updated_at)->addDays(7)->isFuture()) {
+                return back()->withErrors(['name' => 'アカウント名は前回の変更から7日間は変更できません。']);
+            }
+            // 変更OKなら、変更日時を「今」に更新する
+            $user->name_updated_at = now();
         }
 
-        $request->user()->save();
+        if ($request->hasFile('avatar')) {
+            // 古い画像があれば削除（容量節約）
+            if ($user->avatar) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($user->avatar);
+            }
+            // 新しい画像を storage/app/public/avatars フォルダに保存
+            $user->avatar = $request->file('avatar')->store('avatars', 'public');
+        }
+        // ▲▲▲ ここまで追加 ▲▲▲
+
+        $user->fill($validated);
+
+        if ($user->isDirty('email')) {
+            $user->email_verified_at = null;
+        }
+
+        $user->save();
 
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
+        // ▲▲▲ ここまで上書き ▲▲▲
     }
 
     /**
