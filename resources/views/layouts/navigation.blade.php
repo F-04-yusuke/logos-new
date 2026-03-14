@@ -4,7 +4,7 @@
             
             <div class="flex items-center shrink-0">
                 <a href="{{ route('topics.index') }}">
-                    <x-application-logo class="block h-9 w-auto fill-current text-gray-800 dark:text-gray-200" />
+                    <x-application-logo class="block h-8 w-auto object-contain" />
                 </a>
             </div>
 
