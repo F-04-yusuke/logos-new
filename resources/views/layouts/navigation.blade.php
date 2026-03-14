@@ -53,6 +53,9 @@
                         <x-dropdown-link :href="route('profile.edit')">
                             {{ __('Profile') }}
                         </x-dropdown-link>
+                        <x-dropdown-link :href="route('history.index')">
+                            閲覧履歴
+                        </x-dropdown-link>
 
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
@@ -109,6 +112,9 @@
             <div class="mt-3 space-y-1">
                 <x-responsive-nav-link :href="route('profile.edit')">
                     {{ __('Profile') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('history.index')">
+                    閲覧履歴
                 </x-responsive-nav-link>
 
                 <form method="POST" action="{{ route('logout') }}">

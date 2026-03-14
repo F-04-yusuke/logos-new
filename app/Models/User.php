@@ -87,4 +87,11 @@ class User extends Authenticatable
         return $this->hasMany(Analysis::class);
     }
 
+    // このユーザーが閲覧したトピックを取得する
+    public function viewedTopics()
+    {
+        return $this->belongsToMany(Topic::class, 'topic_views')
+                    ->withPivot('last_viewed_at')
+                    ->orderByPivot('last_viewed_at', 'desc');
+    }
 }

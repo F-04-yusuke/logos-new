@@ -136,6 +136,13 @@ class TopicController extends Controller
     // （検索条件を受け取るために Request $request を引数に追加しています）
     public function show(\Illuminate\Http\Request $request, \App\Models\Topic $topic)
     {
+        // ログインしていれば、閲覧履歴を記録・更新する ▼▼▼
+        if (auth()->check()) {
+            \Illuminate\Support\Facades\DB::table('topic_views')->updateOrInsert(
+                ['user_id' => auth()->id(), 'topic_id' => $topic->id],
+                ['last_viewed_at' => now(), 'updated_at' => now()]
+            );
+        }
         // ① まず、このトピックに紐づくエビデンス（投稿）を取得する準備をします
         // URLに「?category=YouTube」などがついていたら、その分類だけで絞り込む
         $query = $topic->posts()->with('user');
@@ -452,9 +459,9 @@ EOT;
 
                 $timelineArray = json_decode($generatedText, true);
                 if (json_last_error() === JSON_ERROR_NONE && is_array($timelineArray)) {
-                    
+
                     // 🌟 修正：全部を true に上書きするのではなく、AIの返答を尊重して保存する
-                    $timelineArray = array_map(function($item) {
+                    $timelineArray = array_map(function ($item) {
                         // is_ai がセットされていない場合は true（AI生成）とする
                         $item['is_ai'] = isset($item['is_ai']) ? filter_var($item['is_ai'], FILTER_VALIDATE_BOOLEAN) : true;
                         return $item;
