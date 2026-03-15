@@ -30,19 +30,19 @@
                     <img id="avatar-preview" src="{{ asset('storage/' . $user->avatar) }}" alt="Avatar" class="h-16 w-16 object-cover rounded-full border border-gray-200 dark:border-gray-700">
                 @else
                     <div id="avatar-preview" class="h-16 w-16 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center border border-gray-200 dark:border-gray-700">
-                        <svg class="h-8 w-8 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                        <svg aria-hidden="true" class="h-8 w-8 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
                     </div>
                 @endif
             </div>
             <div class="flex-1">
-                <x-input-label for="avatar" :value="__('プロフィール画像')" class="dark:text-gray-300 font-bold mb-1" />
+                <x-input-label for="avatar" value="プロフィール画像" class="dark:text-gray-300 font-bold mb-1" />
                 <input id="avatar" name="avatar" type="file" accept="image/*" class="block w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 dark:file:bg-blue-900/30 dark:file:text-blue-400 transition-colors cursor-pointer" onchange="previewImage(event)" />
                 <x-input-error class="mt-2" :messages="$errors->get('avatar')" />
             </div>
         </div>
 
         <div>
-            <x-input-label for="name" :value="__('アカウント名')" class="dark:text-gray-300 font-bold" />
+            <x-input-label for="name" value="アカウント名" class="dark:text-gray-300 font-bold" />
             <x-text-input id="name" name="name" type="text" class="mt-1 block w-full dark:bg-[#131314] dark:border-gray-700 dark:text-white" :value="old('name', $user->name)" required autofocus autocomplete="name" :readonly="!$canChangeName" :class="!$canChangeName ? 'opacity-50 cursor-not-allowed bg-gray-100 dark:bg-gray-800' : ''" />
             <x-input-error class="mt-2" :messages="$errors->get('name')" />
             
@@ -54,13 +54,13 @@
         </div>
 
         <div>
-            <x-input-label for="email" :value="__('Email (ログイン用)')" class="dark:text-gray-300 font-bold" />
+            <x-input-label for="email" value="Email (ログイン用)" class="dark:text-gray-300 font-bold" />
             <x-text-input id="email" name="email" type="email" class="mt-1 block w-full dark:bg-[#131314] dark:border-gray-700 dark:text-white" :value="old('email', $user->email)" required autocomplete="username" />
             <x-input-error class="mt-2" :messages="$errors->get('email')" />
         </div>
 
         <div class="flex items-center gap-4 pt-2">
-            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-md text-sm transition-colors">
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-md text-sm transition-colors shadow-sm">
                 保存する
             </button>
 

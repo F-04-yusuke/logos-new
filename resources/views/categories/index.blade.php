@@ -1,130 +1,84 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-            カテゴリ管理（大分類・中分類）
+        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6 text-gray-900 dark:text-gray-100 mr-2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6.633 10.25c.806 0 1.533-.446 2.031-1.08a9.041 9.041 0 0 1 2.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 0 0 .322-1.672V2.75a.75.75 0 0 1 .75-.75 2.25 2.25 0 0 1 1.5.58c.36.31.6.76.68 1.25.04.24.06.49.06.75 0 .76-.23 1.48-.63 2.08-.2.31-.05.73.3.88l3.126.33a2.25 2.25 0 0 1 1.954 2.65l-1.42 6.75c-.24 1.14-1.28 1.96-2.45 1.96H13.5a5.5 5.5 0 0 1-2.5-.6l-3.11-1.42a4.5 4.5 0 0 0-1.43-.24H5.9c-.83 0-1.5-.67-1.5-1.5V11.75c0-.83.67-1.5 1.5-1.5h.733Z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 10.25h1.5v9h-1.5v-9Z" />
+            </svg>
+            参考になった一覧
         </h2>
     </x-slot>
 
     <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <div x-data="{ activeTab: 'info' }" class="bg-white dark:bg-[#1e1f20] shadow-sm sm:rounded-lg overflow-hidden border border-gray-200 dark:border-gray-800">
 
-            @if (session('status'))
-                <div class="p-4 mb-4 text-sm text-green-800 rounded-lg bg-green-50 dark:bg-gray-800 dark:text-green-400">
-                    {{ session('status') }}
+                <div class="flex border-b border-gray-200 dark:border-gray-800 overflow-x-auto scrollbar-hide">
+                    <button @click="activeTab = 'info'" :class="{ 'border-gray-900 text-gray-900 dark:border-gray-200 dark:text-white font-bold': activeTab === 'info', 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-500 dark:hover:text-gray-300': activeTab !== 'info' }" class="py-3 px-6 border-b-2 text-sm transition-colors focus:outline-none whitespace-nowrap">
+                        情報 ({{ $likedPosts->count() }})
+                    </button>
+                    <button @click="activeTab = 'comments'" :class="{ 'border-gray-900 text-gray-900 dark:border-gray-200 dark:text-white font-bold': activeTab === 'comments', 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-500 dark:hover:text-gray-300': activeTab !== 'comments' }" class="py-3 px-6 border-b-2 text-sm transition-colors focus:outline-none whitespace-nowrap">
+                        コメント ({{ $likedComments->count() }})
+                    </button>
+                    <button @click="activeTab = 'analysis'" :class="{ 'border-gray-900 text-gray-900 dark:border-gray-200 dark:text-white font-bold': activeTab === 'analysis', 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-500 dark:hover:text-gray-300': activeTab !== 'analysis' }" class="py-3 px-6 border-b-2 text-sm transition-colors focus:outline-none whitespace-nowrap">
+                        分析・図解 ({{ $likedAnalyses->count() }})
+                    </button>
                 </div>
-            @endif
 
-            <div class="p-4 sm:p-8 bg-white dark:bg-gray-800 shadow sm:rounded-lg">
-                <header>
-                    <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100">新しいカテゴリの追加</h2>
-                </header>
-
-                <form method="POST" action="{{ route('categories.store') }}" class="mt-6 space-y-6 max-w-xl">
-                    @csrf
-                    <div>
-                        <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">カテゴリ名</label>
-                        <input type="text" name="name" id="name" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-900 dark:border-gray-700 dark:text-white" required>
+                <div class="p-4 sm:p-6">
+                    
+                    {{-- 情報タブ --}}
+                    <div x-show="activeTab === 'info'" x-cloak class="space-y-6">
+                        @forelse ($likedPosts as $post)
+                            <div class="flex flex-col gap-1.5">
+                                <x-post-card :post="$post" />
+                                <div class="text-right px-2">
+                                    <span class="text-[11px] sm:text-xs font-bold text-gray-500 dark:text-gray-400">
+                                        🔗 投稿先トピック: <a href="{{ route('topics.show', $post->topic_id) }}" class="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 transition-colors">{{ $post->topic->title }}</a>
+                                    </span>
+                                </div>
+                            </div>
+                        @empty
+                        <p class="text-center text-gray-500 py-6 text-sm">いいねした情報はありません。</p>
+                        @endforelse
                     </div>
 
-                    <div>
-                        <label for="sort_order" class="block text-sm font-medium text-gray-700 dark:text-gray-300">表示順（数字が小さいほど上に表示されます）</label>
-                        <input type="number" name="sort_order" id="sort_order" value="0" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-900 dark:border-gray-700 dark:text-white" required>
+                    {{-- コメントタブ --}}
+                    <div x-show="activeTab === 'comments'" x-cloak class="space-y-6">
+                        @forelse ($likedComments as $comment)
+                            <div class="flex flex-col gap-1.5">
+                                <div class="bg-white dark:bg-[#1e1f20] px-4 rounded-lg border border-gray-200 dark:border-transparent shadow-sm">
+                                    <x-comment-card :comment="$comment" />
+                                </div>
+                                <div class="text-right px-2">
+                                    <span class="text-[11px] sm:text-xs font-bold text-gray-500 dark:text-gray-400">
+                                        🔗 投稿先トピック: <a href="{{ route('topics.show', $comment->topic_id) }}" class="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 transition-colors">{{ $comment->topic->title }}</a>
+                                    </span>
+                                </div>
+                            </div>
+                        @empty
+                        <p class="text-center text-gray-500 py-6 text-sm">いいねしたコメントはありません。</p>
+                        @endforelse
                     </div>
 
-                    <div>
-                        <label for="parent_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300">親カテゴリ（中分類にする場合のみ選択）</label>
-                        <select name="parent_id" id="parent_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-900 dark:border-gray-700 dark:text-white">
-                            <option value="">-- なし（新しい大分類を作成する） --</option>
-                            @foreach ($categories as $category)
-                                <option value="{{ $category->id }}">{{ $category->name }}</option>
-                            @endforeach
-                        </select>
+                    {{-- 分析・図解タブ --}}
+                    <div x-show="activeTab === 'analysis'" x-cloak class="space-y-6">
+                        @forelse ($likedAnalyses as $analysis)
+                            <div class="flex flex-col gap-1.5">
+                                <x-analysis-card :analysis="$analysis" />
+                                <div class="text-right px-2">
+                                    <span class="text-[11px] sm:text-xs font-bold text-gray-500 dark:text-gray-400">
+                                        🔗 公開先トピック: <a href="{{ route('topics.show', $analysis->topic_id) }}" class="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 transition-colors">{{ $analysis->topic->title }}</a>
+                                    </span>
+                                </div>
+                            </div>
+                        @empty
+                        <p class="text-center text-gray-500 py-6 text-sm">いいねした分析・図解はありません。</p>
+                        @endforelse
                     </div>
 
-                    <div>
-                        <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                            追加する
-                        </button>
-                    </div>
-                </form>
-            </div>
-
-            <div class="p-4 sm:p-8 bg-white dark:bg-gray-800 shadow sm:rounded-lg">
-                <header class="mb-4">
-                    <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100">現在のカテゴリ一覧（ドラッグ不要・数字で並び替え）</h2>
-                </header>
-
-                <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-                    @if ($categories->isEmpty())
-                        <p class="text-sm text-gray-500">まだカテゴリが登録されていません。</p>
-                    @else
-                        <ul class="space-y-4">
-                            @foreach ($categories as $category)
-                                <li class="p-4 bg-white dark:bg-gray-800 rounded-md shadow-sm border border-gray-100 dark:border-gray-700" x-data="{ editing: false }">
-                                    
-                                    <div x-show="!editing" class="flex justify-between items-center">
-                                        <div class="font-bold text-lg text-blue-600 dark:text-blue-400">
-                                            📁 {{ $category->name }} <span class="text-xs text-gray-400 font-normal ml-2">（順序: {{ $category->sort_order }}）</span>
-                                        </div>
-                                        <div class="flex space-x-2">
-                                            <button @click="editing = true" class="text-sm bg-gray-100 hover:bg-gray-200 border text-gray-600 py-1 px-3 rounded">編集</button>
-                                            <form method=\"POST\" action="{{ route('categories.destroy', $category) }}" onsubmit="return confirm('本当に削除しますか？紐づく中分類もすべて消えます！');">
-                                                @csrf @method('DELETE')
-                                                <button type="submit" class="text-sm bg-red-100 hover:bg-red-200 border text-red-600 py-1 px-3 rounded">削除</button>
-                                            </form>
-                                        </div>
-                                    </div>
-
-                                    <div x-show="editing" x-cloak class="mt-2 p-3 bg-gray-50 dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600">
-                                        <form method="POST" action="{{ route('categories.update', $category) }}" class="flex items-center space-x-3">
-                                            @csrf @method('PATCH')
-                                            <input type="text" name="name" value="{{ $category->name }}" class="rounded border-gray-300 text-sm" required>
-                                            <input type="number" name="sort_order" value="{{ $category->sort_order }}" class="w-20 rounded border-gray-300 text-sm" required>
-                                            <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white text-sm py-1 px-3 rounded">保存</button>
-                                            <button type="button" @click="editing = false" class="text-sm text-gray-500 hover:underline">キャンセル</button>
-                                        </form>
-                                    </div>
-                                    
-                                    @if ($category->children->isNotEmpty())
-                                        <ul class="mt-3 ml-6 space-y-2 border-l-2 border-gray-200 dark:border-gray-700 pl-4">
-                                            @foreach ($category->children as $child)
-                                                <li x-data="{ editingChild: false }" class="flex flex-col justify-center">
-                                                    
-                                                    <div x-show="!editingChild" class="flex justify-between items-center w-full">
-                                                        <div class="text-sm text-gray-700 dark:text-gray-300 flex items-center">
-                                                            <span class="mr-2 text-gray-400">└</span> 📄 {{ $child->name }} <span class="text-xs text-gray-400 font-normal ml-2">（順序: {{ $child->sort_order }}）</span>
-                                                        </div>
-                                                        <div class="flex space-x-2">
-                                                            <button @click="editingChild = true" class="text-xs bg-gray-100 hover:bg-gray-200 border text-gray-600 py-1 px-2 rounded">編集</button>
-                                                            <form method=\"POST\" action="{{ route('categories.destroy', $child) }}" onsubmit="return confirm('削除しますか？');">
-                                                                @csrf @method('DELETE')
-                                                                <button type="submit" class="text-xs bg-red-100 hover:bg-red-200 border text-red-600 py-1 px-2 rounded">削除</button>
-                                                            </form>
-                                                        </div>
-                                                    </div>
-
-                                                    <div x-show="editingChild" x-cloak class="mt-1 flex items-center space-x-3">
-                                                        <form method="POST" action="{{ route('categories.update', $child) }}" class="flex items-center space-x-3 w-full">
-                                                            @csrf @method('PATCH')
-                                                            <span class="text-gray-400">└</span>
-                                                            <input type="text" name="name" value="{{ $child->name }}" class="rounded border-gray-300 text-sm py-1" required>
-                                                            <input type="number" name="sort_order" value="{{ $child->sort_order }}" class="w-16 rounded border-gray-300 text-sm py-1" required>
-                                                            <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white text-xs py-1 px-2 rounded">保存</button>
-                                                            <button type="button" @click="editingChild = false" class="text-xs text-gray-500 hover:underline">キャンセル</button>
-                                                        </form>
-                                                    </div>
-
-                                                </li>
-                                            @endforeach
-                                        </ul>
-                                    @endif
-                                </li>
-                            @endforeach
-                        </ul>
-                    @endif
                 </div>
             </div>
-
         </div>
     </div>
 </x-app-layout>

@@ -24,7 +24,7 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 
-<body class="font-sans antialiased">
+<body class="font-sans antialiased bg-gray-100 dark:bg-[#131314]">
 
     {{-- 
        【修正】スマホ対応：画面幅が768px（mdサイズ）以上なら初期表示を開き、

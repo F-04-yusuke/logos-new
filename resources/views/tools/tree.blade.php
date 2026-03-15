@@ -2,19 +2,20 @@
     <x-slot name="header">
         <div class="flex justify-between items-center w-full">
             <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
                 </svg>
                 ロジックツリー作成 (PRO)
             </h2>
-            <button onclick="saveTree()" id="save-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1.5 px-4 rounded text-sm transition-colors shadow-sm">
+            {{-- 【修正】スマホでのタップ領域を考慮し py-2 sm:py-1.5 に調整 --}}
+            <button type="button" onclick="saveTree()" id="save-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 sm:py-1.5 rounded text-sm transition-colors shadow-sm">
                 ツリーを保存する
             </button>
         </div>
     </x-slot>
 
-    <div class="py-6">
-        <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
+    <div class="py-6 sm:py-8">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
 
             <style>
                 textarea {
@@ -45,7 +46,7 @@
 
             <div class="flex flex-col gap-8">
                 <div>
-                    <div class="mb-6 border-b border-gray-200 dark:border-gray-800 pb-4 flex justify-between items-end">
+                    <div class="mb-6 border-b border-gray-200 dark:border-gray-800 pb-4 flex justify-between items-end" px-4 sm:px-0>
                         <div>
                             <p class="text-sm text-gray-600 dark:text-gray-400">各コメントに自動でID（自1, A2など）が付与され、下部のAIと連携します。完成したツリーはトピックの分析タブに投稿できます。</p>
                         </div>
@@ -57,36 +58,37 @@
                             <span class="text-xs text-gray-500 dark:text-gray-400">AI読み込み用データ</span>
                         </div>
 
-                        <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6 flex flex-col sm:flex-row gap-3 items-end">
+                        <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 sm:p-5 mb-6 flex flex-col sm:flex-row gap-3 items-end shadow-sm">
                             <div class="flex-1 w-full">
-                                <label class="block text-xs font-bold text-blue-800 dark:text-blue-300 mb-1">AIでツリーの土台を自動生成</label>
-                                <input type="text" id="tree-theme-input" class="w-full bg-white dark:bg-[#131314] border border-blue-300 dark:border-blue-700 rounded text-gray-900 dark:text-gray-100 text-sm px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="議論したいテーマを入力（例：消費税増税の是非について）">
+                                <label for="tree-theme-input" class="block text-xs font-bold text-blue-800 dark:text-blue-300 mb-1.5">AIでツリーの土台を自動生成</label>
+                                <input type="text" id="tree-theme-input" class="w-full bg-white dark:bg-[#131314] border border-blue-300 dark:border-blue-700 rounded-lg text-gray-900 dark:text-gray-100 text-sm px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow" placeholder="議論したいテーマを入力（例：消費税増税の是非について）">
                             </div>
-                            <button id="ai-generate-btn" onclick="generateWithAI()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded text-sm transition-colors shadow-sm shrink-0 flex items-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <button type="button" id="ai-generate-btn" onclick="generateWithAI()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 px-5 rounded-lg text-sm transition-colors shadow-sm shrink-0 flex items-center justify-center">
+                                <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
                                 </svg>
                                 AIで生成
                             </button>
                         </div>
 
-                        <div class="space-y-2 mb-3">
-                            <input type="url" id="info-url" class="w-full bg-transparent dark:bg-[#131314] border-b border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-200 text-sm py-2 focus:outline-none focus:border-blue-500 transition-colors placeholder-gray-400 dark:placeholder-gray-600" placeholder="元情報のURL (例: https://youtu.be/...)">
-                            <textarea id="info-desc" oninput="autoResize(this)" class="w-full bg-transparent dark:bg-[#131314] border-b border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-200 text-sm py-2 focus:outline-none focus:border-blue-500 transition-colors placeholder-gray-400 dark:placeholder-gray-600" rows="1" placeholder="トピックの主題や元情報の概要を入力..."></textarea>
+                        <div class="space-y-3 mb-4">
+                            <input type="url" id="info-url" class="w-full bg-transparent dark:bg-[#131314] border-b-2 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-200 text-sm py-2 px-1 focus:outline-none focus:border-blue-500 transition-colors placeholder-gray-400 dark:placeholder-gray-600" placeholder="元情報のURL (例: https://youtu.be/...)">
+                            <textarea id="info-desc" oninput="autoResize(this)" class="w-full bg-transparent dark:bg-[#131314] border-b-2 border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-200 text-sm py-2 px-1 focus:outline-none focus:border-blue-500 transition-colors placeholder-gray-400 dark:placeholder-gray-600 leading-relaxed" rows="1" placeholder="トピックの主題や元情報の概要を入力..."></textarea>
                         </div>
 
-                        <button onclick="addNode(document.getElementById('root-replies'))" class="text-xs font-bold text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors flex items-center bg-gray-100 hover:bg-gray-200 dark:bg-gray-800/50 dark:hover:bg-gray-700 px-3 py-1.5 rounded-full w-fit border border-gray-200 dark:border-gray-700">
-                            <span class="text-base mr-1 leading-none">＋</span> 分岐を追加
+                        {{-- 【修正】タップ領域拡大のため py-2 に --}}
+                        <button type="button" onclick="addNode(document.getElementById('root-replies'))" class="text-xs font-bold text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors flex items-center bg-gray-100 hover:bg-gray-200 dark:bg-[#1e1f20] dark:hover:bg-gray-800 px-4 py-2 rounded-full w-fit border border-gray-200 dark:border-gray-700 shadow-sm mt-4">
+                            <span aria-hidden="true" class="text-base mr-1 leading-none">＋</span> 分岐を追加
                         </button>
                     </div>
 
-                    <div id="root-replies" class="space-y-2">
+                    <div id="root-replies" class="space-y-3 mt-4">
                     </div>
                 </div>
 
                 <div class="mt-8 border-t border-gray-200 dark:border-gray-800 pt-8">
                     <h2 class="text-xl font-bold mb-4 flex items-center text-gray-900 dark:text-gray-100">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 text-blue-500 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 text-blue-500 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
                         </svg>
                         AIアシスタント (Gemini連携準備中)
@@ -97,27 +99,28 @@
                         <div id="chat-history" class="chat-scroll flex-1 overflow-y-auto p-4 space-y-4">
                             <div class="flex gap-3">
                                 <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center shrink-0 shadow-md">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
                                     </svg>
                                 </div>
-                                <div class="bg-gray-100 dark:bg-[#131314] p-3 rounded-lg rounded-tl-none text-sm text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-800 max-w-[85%]">
+                                <div class="bg-gray-100 dark:bg-[#131314] p-3 rounded-lg rounded-tl-none text-sm text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-800 max-w-[85%] leading-relaxed">
                                     ※これはUIの確認用モックアップです。本番環境ではここにGemini APIからの実際の回答が表示されます。<br>
                                     「自1の返信案を作って」など、対象を選んで指示を試してみてください。
                                 </div>
                             </div>
                         </div>
 
-                        <div class="p-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#18191a]">
-                            <div class="flex gap-2 mb-2 items-center">
-                                <span class="text-xs text-gray-500 dark:text-gray-400 font-bold">返信対象:</span>
-                                <select id="ai-target-select" class="bg-white dark:bg-[#131314] text-gray-900 dark:text-gray-200 text-xs px-2 py-1.5 rounded border border-gray-300 dark:border-gray-600 focus:outline-none focus:border-blue-500 cursor-pointer">
+                        <div class="p-3 sm:p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#18191a]">
+                            <div class="flex gap-2 mb-2.5 items-center">
+                                <label for="ai-target-select" class="text-xs text-gray-500 dark:text-gray-400 font-bold shrink-0">返信対象:</label>
+                                <select id="ai-target-select" class="bg-white dark:bg-[#131314] text-gray-900 dark:text-gray-200 text-xs px-2 py-1.5 rounded border border-gray-300 dark:border-gray-600 focus:outline-none focus:border-blue-500 cursor-pointer shadow-sm w-full sm:w-auto">
                                     <option value="指定なし">指定なし (全体への質問・調査)</option>
                                 </select>
                             </div>
                             <div class="flex gap-2 items-end">
-                                <textarea id="ai-input" oninput="autoResize(this)" class="flex-1 bg-white dark:bg-[#131314] border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-gray-200 text-sm p-2.5 focus:outline-none focus:border-blue-500 max-h-32" rows="1" placeholder="AIへの指示や修正案を入力..."></textarea>
-                                <button onclick="sendAiMessage()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2.5 rounded-lg font-bold text-sm transition-colors shadow-md shrink-0">
+                                <textarea id="ai-input" oninput="autoResize(this)" class="flex-1 bg-white dark:bg-[#131314] border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-gray-200 text-sm p-2.5 focus:outline-none focus:ring-1 focus:ring-blue-500 max-h-32 transition-shadow shadow-sm" rows="1" placeholder="AIへの指示や修正案を入力..."></textarea>
+                                {{-- 【修正】タップ領域拡大のため py-2.5 px-5 に --}}
+                                <button type="button" onclick="sendAiMessage()" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-lg font-bold text-sm transition-colors shadow-md shrink-0">
                                     送信
                                 </button>
                             </div>
@@ -170,11 +173,12 @@
 
         // 手動追加時のプルダウンに「主張」を追加
         function addNode(container) {
+            // 【修正】セレクトボックスや削除ボタンの余白(py-1.5, px-2など)を調整してタップしやすくしました
             const nodeHTML = `
-                <div class="mt-2 group relative tree-line tree-node">
+                <div class="mt-3 group relative tree-line tree-node">
                     <div class="flex flex-col">
-                        <div class="flex items-center gap-2 mb-1">
-                            <select onchange="handleSelectChange(this)" class="speaker-select bg-transparent dark:bg-[#131314] text-gray-700 dark:text-gray-300 text-sm font-bold focus:outline-none cursor-pointer">
+                        <div class="flex flex-wrap items-center gap-2 mb-1.5 pr-2">
+                            <select onchange="handleSelectChange(this)" class="speaker-select bg-transparent dark:bg-[#131314] text-gray-700 dark:text-gray-300 text-sm font-bold focus:outline-none cursor-pointer py-1">
                                 <option value="ユーザーA" class="bg-white dark:bg-[#1e1f20]">ユーザーA</option>
                                 <option value="ユーザーB" class="bg-white dark:bg-[#1e1f20]">ユーザーB</option>
                                 <option value="ユーザーC" class="bg-white dark:bg-[#1e1f20]">ユーザーC</option>
@@ -182,27 +186,28 @@
                                 <option value="その他" class="bg-white dark:bg-[#1e1f20]">その他</option>
                             </select>
                             
-                            <span class="speaker-id text-xs font-black text-gray-500 dark:text-gray-500 bg-gray-200 dark:bg-gray-800 px-1.5 py-0.5 rounded"></span>
+                            <span class="speaker-id text-xs font-black text-gray-500 dark:text-gray-500 bg-gray-200 dark:bg-gray-800 px-1.5 py-0.5 rounded shrink-0"></span>
 
-                            <select onchange="updateStanceColor(this)" class="stance-select text-[10px] px-1.5 py-0.5 rounded focus:outline-none cursor-pointer border bg-red-100 dark:bg-red-400/10 text-red-600 dark:text-red-400 border-red-200 dark:border-red-400/30">
+                            <select onchange="updateStanceColor(this)" class="stance-select text-[11px] px-2 py-1 rounded focus:outline-none cursor-pointer border bg-red-100 dark:bg-red-400/10 text-red-600 dark:text-red-400 border-red-200 dark:border-red-400/30">
                                 <option value="主張" class="bg-white dark:bg-[#1e1f20] text-gray-600 dark:text-gray-400">主張</option>
                                 <option value="反論" class="bg-white dark:bg-[#1e1f20] text-red-600 dark:text-red-400" selected>反論</option>
                                 <option value="賛成・補足" class="bg-white dark:bg-[#1e1f20] text-green-600 dark:text-green-400">賛成・補足</option>
                                 <option value="疑問" class="bg-white dark:bg-[#1e1f20] text-yellow-600 dark:text-yellow-400">疑問</option>
                             </select>
 
-                            <button onclick="removeNode(this)" class="ml-auto text-gray-400 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 text-xs flex items-center transition-colors px-2 py-1 rounded">
-                                <span class="text-sm mr-1 leading-none">✕</span>
+                            <button type="button" onclick="removeNode(this)" class="ml-auto text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-colors p-2 sm:p-1.5 rounded -mr-2 flex items-center justify-center">
+                                <span class="sr-only">削除</span>
+                                <svg aria-hidden="true" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                             </button>
                         </div>
 
-                        <textarea oninput="autoResize(this)" class="w-full bg-transparent dark:bg-[#131314] border-b border-gray-300 dark:border-gray-700 focus:border-blue-500 text-gray-900 dark:text-gray-200 text-sm py-1.5 focus:outline-none transition-colors placeholder-gray-400 dark:placeholder-gray-600" rows="1" placeholder="意見を入力..."></textarea>
+                        <textarea oninput="autoResize(this)" class="w-full bg-transparent dark:bg-[#131314] border-0 border-b border-gray-300 dark:border-gray-700 focus:ring-0 focus:border-blue-500 text-gray-900 dark:text-gray-200 text-[15px] sm:text-sm py-1.5 focus:outline-none transition-colors placeholder-gray-400 dark:placeholder-gray-600 leading-relaxed" rows="1" placeholder="意見を入力..."></textarea>
                         
-                        <button onclick="addNode(this.nextElementSibling)" class="mt-1.5 text-[11px] font-bold text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors flex items-center w-fit">
-                            <span class="mr-1 leading-none">＋</span> 返信を追加
+                        <button type="button" onclick="addNode(this.nextElementSibling)" class="mt-1.5 text-[12px] font-bold text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors flex items-center w-fit py-1.5 pr-3">
+                            <span aria-hidden="true" class="mr-1 leading-none">＋</span> 返信を追加
                         </button>
                         
-                        <div class="replies-container ml-2 pl-3 sm:ml-2 sm:pl-4 mt-1 space-y-1"></div>
+                        <div class="replies-container ml-2 pl-3 sm:ml-3 sm:pl-4 mt-1 space-y-2"></div>
                     </div>
                 </div>
             `;
@@ -245,12 +250,12 @@
                 idSpan.innerText = label;
 
                 if (speaker.includes("自分")) {
-                    idSpan.classList.add('bg-blue-100', 'text-blue-800', 'dark:bg-blue-900', 'dark:text-blue-200');
+                    idSpan.classList.add('bg-blue-100', 'text-blue-800', 'dark:bg-blue-900/40', 'dark:text-blue-300');
                     idSpan.classList.remove('bg-gray-200', 'text-gray-500', 'dark:bg-gray-800', 'dark:text-gray-500');
                     aiSelect.insertAdjacentHTML('beforeend', `<option value="${label}">${label} を対象にする</option>`);
                 } else {
                     idSpan.classList.add('bg-gray-200', 'text-gray-500', 'dark:bg-gray-800', 'dark:text-gray-500');
-                    idSpan.classList.remove('bg-blue-100', 'text-blue-800', 'dark:bg-blue-900', 'dark:text-blue-200');
+                    idSpan.classList.remove('bg-blue-100', 'text-blue-800', 'dark:bg-blue-900/40', 'dark:text-blue-300');
                 }
             });
         }
@@ -267,7 +272,7 @@
 
         // 🌟 修正2：スタンスに「主張」の時の色を追加
         function updateStanceColor(selectElement) {
-            selectElement.className = 'stance-select text-[10px] px-1.5 py-0.5 rounded focus:outline-none cursor-pointer border';
+            selectElement.className = 'stance-select text-[11px] px-2 py-1 rounded focus:outline-none cursor-pointer border';
             const value = selectElement.value;
             if (value === '主張') selectElement.classList.add('bg-gray-100', 'text-gray-600', 'border-gray-200', 'dark:bg-gray-400/10', 'dark:text-gray-400', 'dark:border-gray-400/30');
             else if (value === '反論') selectElement.classList.add('bg-red-100', 'text-red-600', 'border-red-200', 'dark:bg-red-400/10', 'dark:text-red-400', 'dark:border-red-400/30');
@@ -287,10 +292,10 @@
             // ユーザーのメッセージを画面に表示
             const userMsg = `
                 <div class="flex gap-3 flex-row-reverse">
-                    <div class="w-8 h-8 rounded-full bg-gray-500 dark:bg-gray-600 flex items-center justify-center shrink-0 shadow-md text-xs text-white font-bold">You</div>
+                    <div class="w-8 h-8 rounded-full bg-gray-500 dark:bg-gray-600 flex items-center justify-center shrink-0 shadow-md text-xs text-white font-bold" aria-hidden="true">You</div>
                     <div class="flex flex-col items-end">
                         ${target !== '指定なし' ? `<span class="text-[10px] text-gray-500 mb-1 font-bold">Target: ${target}</span>` : ''}
-                        <div class="bg-blue-600 p-3 rounded-lg rounded-tr-none text-sm text-white shadow-md max-w-[85%] whitespace-pre-wrap">${text}</div>
+                        <div class="bg-blue-600 p-3 rounded-lg rounded-tr-none text-sm text-white shadow-md max-w-[85%] whitespace-pre-wrap leading-relaxed">${text}</div>
                     </div>
                 </div>
             `;
@@ -305,7 +310,7 @@
             const loadingMsg = `
                 <div id="${loadingId}" class="flex gap-3">
                     <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center shrink-0 shadow-md">
-                        <svg class="h-4 w-4 text-white animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                        <svg aria-hidden="true" class="h-4 w-4 text-white animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
                     </div>
                     <div class="bg-gray-100 dark:bg-[#131314] p-3 rounded-lg rounded-tl-none text-sm text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-800 font-bold">
                         <span class="animate-pulse">AIが思考中...</span>
@@ -349,7 +354,7 @@
                     const aiMsg = `
                     <div class="flex gap-3">
                         <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center shrink-0 shadow-md">
-                            <svg class="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                            <svg aria-hidden="true" class="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
                         </div>
                         <div class="bg-gray-100 dark:bg-[#131314] p-3 rounded-lg rounded-tl-none text-sm text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-800 max-w-[85%] whitespace-pre-wrap leading-relaxed">${replyText}</div>
                     </div>
@@ -362,7 +367,7 @@
                     document.getElementById(loadingId).remove();
                     const errorMsg = `
                     <div class="flex gap-3">
-                        <div class="w-8 h-8 rounded-full bg-red-600 flex items-center justify-center shrink-0 shadow-md text-white font-bold">!</div>
+                        <div class="w-8 h-8 rounded-full bg-red-600 flex items-center justify-center shrink-0 shadow-md text-white font-bold" aria-hidden="true">!</div>
                         <div class="bg-red-50 dark:bg-red-900/30 p-3 rounded-lg rounded-tl-none text-sm text-red-800 dark:text-red-200 border border-red-200 dark:border-red-800">
                             通信エラーが発生しました。
                         </div>
@@ -573,11 +578,12 @@
             else if (st === '疑問') stanceColor = 'bg-yellow-100 text-yellow-600 border-yellow-200 dark:bg-yellow-400/10 dark:text-yellow-400 dark:border-yellow-400/30';
             else stanceColor = 'bg-red-100 text-red-600 border-red-200 dark:bg-red-400/10 dark:text-red-400 dark:border-red-400/30';
 
+            // 【修正】手動追加と同じく余白調整やアクセシビリティ対応を適用
             return `
-                <div class="mt-2 group relative tree-line tree-node">
+                <div class="mt-3 group relative tree-line tree-node">
                     <div class="flex flex-col">
-                        <div class="flex items-center gap-2 mb-1">
-                            <select onchange="handleSelectChange(this)" class="speaker-select bg-transparent dark:bg-[#131314] ${speakerColor} text-sm font-bold focus:outline-none cursor-pointer">
+                        <div class="flex flex-wrap items-center gap-2 mb-1.5 pr-2">
+                            <select onchange="handleSelectChange(this)" class="speaker-select bg-transparent dark:bg-[#131314] ${speakerColor} text-sm font-bold focus:outline-none cursor-pointer py-1">
                                 <option value="ユーザーA" class="bg-white dark:bg-[#1e1f20]" ${selUserA}>ユーザーA</option>
                                 <option value="ユーザーB" class="bg-white dark:bg-[#1e1f20]" ${selUserB}>ユーザーB</option>
                                 <option value="ユーザーC" class="bg-white dark:bg-[#1e1f20]" ${selUserC}>ユーザーC</option>
@@ -585,27 +591,28 @@
                                 <option value="その他" class="bg-white dark:bg-[#1e1f20]" ${selOther}>その他</option>
                             </select>
                             
-                            <span class="speaker-id text-xs font-black text-gray-500 dark:text-gray-500 bg-gray-200 dark:bg-gray-800 px-1.5 py-0.5 rounded"></span>
+                            <span class="speaker-id text-xs font-black text-gray-500 dark:text-gray-500 bg-gray-200 dark:bg-gray-800 px-1.5 py-0.5 rounded shrink-0"></span>
 
-                            <select onchange="updateStanceColor(this)" class="stance-select text-[10px] px-1.5 py-0.5 rounded focus:outline-none cursor-pointer border ${stanceColor}">
+                            <select onchange="updateStanceColor(this)" class="stance-select text-[11px] px-2 py-1 rounded focus:outline-none cursor-pointer border ${stanceColor}">
                                 <option value="主張" class="bg-white dark:bg-[#1e1f20] text-gray-600 dark:text-gray-400" ${selArg}>主張</option>
                                 <option value="反論" class="bg-white dark:bg-[#1e1f20] text-red-600 dark:text-red-400" ${selOpp}>反論</option>
                                 <option value="賛成・補足" class="bg-white dark:bg-[#1e1f20] text-green-600 dark:text-green-400" ${selAgr}>賛成・補足</option>
                                 <option value="疑問" class="bg-white dark:bg-[#1e1f20] text-yellow-600 dark:text-yellow-400" ${selQ}>疑問</option>
                             </select>
 
-                            <button onclick="removeNode(this)" class="ml-auto text-gray-400 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 text-xs flex items-center transition-colors px-2 py-1 rounded">
-                                <span class="text-sm mr-1 leading-none">✕</span>
+                            <button type="button" onclick="removeNode(this)" class="ml-auto text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-colors p-2 sm:p-1.5 rounded -mr-2 flex items-center justify-center">
+                                <span class="sr-only">削除</span>
+                                <svg aria-hidden="true" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                             </button>
                         </div>
 
-                        <textarea oninput="autoResize(this)" class="w-full bg-transparent dark:bg-[#131314] border-b border-gray-300 dark:border-gray-700 focus:border-blue-500 text-gray-900 dark:text-gray-200 text-sm py-1.5 focus:outline-none transition-colors placeholder-gray-400 dark:placeholder-gray-600" rows="1" placeholder="意見を入力...">${node.text || ''}</textarea>
+                        <textarea oninput="autoResize(this)" class="w-full bg-transparent dark:bg-[#131314] border-0 border-b border-gray-300 dark:border-gray-700 focus:ring-0 focus:border-blue-500 text-gray-900 dark:text-gray-200 text-[15px] sm:text-sm py-1.5 focus:outline-none transition-colors placeholder-gray-400 dark:placeholder-gray-600 leading-relaxed" rows="1" placeholder="意見を入力...">${node.text || ''}</textarea>
                         
-                        <button onclick="addNode(this.nextElementSibling)" class="mt-1.5 text-[11px] font-bold text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors flex items-center w-fit">
-                            <span class="mr-1 leading-none">＋</span> 返信を追加
+                        <button type="button" onclick="addNode(this.nextElementSibling)" class="mt-1.5 text-[12px] font-bold text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors flex items-center w-fit py-1.5 pr-3">
+                            <span aria-hidden="true" class="mr-1 leading-none">＋</span> 返信を追加
                         </button>
                         
-                        <div class="replies-container ml-2 pl-3 sm:ml-2 sm:pl-4 mt-1 space-y-1">${childrenHTML}</div>
+                        <div class="replies-container ml-2 pl-3 sm:ml-3 sm:pl-4 mt-1 space-y-2">${childrenHTML}</div>
                     </div>
                 </div>
             `;
