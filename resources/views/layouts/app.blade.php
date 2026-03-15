@@ -26,7 +26,11 @@
 
 <body class="font-sans antialiased">
 
-    <div x-data="{ sidebarOpen: true }" class="min-h-screen bg-gray-100 dark:bg-[#131314] flex h-screen overflow-hidden">
+    {{-- 
+       【修正】スマホ対応：画面幅が768px（mdサイズ）以上なら初期表示を開き、
+       スマホサイズなら初期表示を閉じた状態にするようAlpine.jsを修正しました。
+    --}}
+    <div x-data="{ sidebarOpen: window.innerWidth >= 768 }" class="min-h-screen bg-gray-100 dark:bg-[#131314] flex h-screen overflow-hidden">
 
         @include('layouts.sidebar')
 

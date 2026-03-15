@@ -49,7 +49,10 @@
 
                         <div class="mb-6">
                             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">議論の内容・背景（概要）</label>
-                            <textarea name="content" rows="6" class="mt-1 block w-full rounded-md border-gray-300 dark:bg-[#131314] dark:border-gray-700 dark:text-white focus:border-blue-500 focus:ring-blue-500" required>{{ old('content') }}</textarea>
+                            {{-- 【修正】デザインはそのまま、自動拡張機能のみ追加 --}}
+                            <textarea name="content" rows="6" 
+                                x-data x-init="$el.style.height = 'auto'; $el.style.height = $el.scrollHeight + 'px'" @input="$el.style.height = 'auto'; $el.style.height = $el.scrollHeight + 'px'"
+                                class="mt-1 block w-full rounded-md border-gray-300 dark:bg-[#131314] dark:border-gray-700 dark:text-white focus:border-blue-500 focus:ring-blue-500 overflow-hidden resize-none" required>{{ old('content') }}</textarea>
                         </div>
 
                         <div class="mb-6" x-data="{
@@ -70,7 +73,8 @@
                                         
                                         <input type="text" :name="'timeline_date['+index+']'" x-model="item.date" @input="markAsEdited(item)" placeholder="202X年X月" class="w-full sm:w-1/4 rounded-md border-gray-300 dark:bg-[#131314] dark:border-gray-700 dark:text-white text-sm focus:border-blue-500 focus:ring-blue-500 py-1.5">
                                         
-                                        <textarea :name="'timeline_event['+index+']'" x-model="item.event" @input="markAsEdited(item)" placeholder="出来事の要約" rows="1" class="w-full sm:flex-1 rounded-md border-gray-300 dark:bg-[#131314] dark:border-gray-700 dark:text-white text-sm focus:border-blue-500 focus:ring-blue-500 py-1.5"></textarea>
+                                        {{-- 【修正】デザインはそのまま、自動拡張機能のみ追加 --}}
+                                        <textarea :name="'timeline_event['+index+']'" x-model="item.event" @input="markAsEdited(item); $el.style.height = 'auto'; $el.style.height = $el.scrollHeight + 'px'" x-init="$nextTick(() => { $el.style.height = 'auto'; $el.style.height = $el.scrollHeight + 'px' })" placeholder="出来事の要約" rows="1" class="w-full sm:flex-1 rounded-md border-gray-300 dark:bg-[#131314] dark:border-gray-700 dark:text-white text-sm focus:border-blue-500 focus:ring-blue-500 py-1.5 overflow-hidden resize-none"></textarea>
                                         
                                         <input type="hidden" :name="'timeline_is_ai['+index+']'" :value="item.is_ai ? 1 : 0">
                                         

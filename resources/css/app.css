@@ -1,3 +1,38 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ---------------------------------------------------------
+   ここから下を追加：全体的なスクロールバーのカスタマイズ
+--------------------------------------------------------- */
+@layer base {
+  /* WebKit系ブラウザ (Chrome, Safari, Edge) のスクロールバー設定 */
+  ::-webkit-scrollbar {
+    width: 6px;  /* 縦スクロールバーの幅を細くしてノイズを減らす */
+    height: 6px; /* 横スクロールバーの高さを細くする */
+  }
+
+  /* スクロールバーの背景（トラック） */
+  ::-webkit-scrollbar-track {
+    background: transparent; /* 背景色（#131314等）に完全に溶け込むよう透明に設定 */
+  }
+
+  /* スクロールバーの動く部分（つまみ） */
+  ::-webkit-scrollbar-thumb {
+    /* ダークモードの背景に合う、控えめな半透明の白（ライトモードでも違和感が出にくい） */
+    background-color: rgba(255, 255, 255, 0.15); 
+    border-radius: 9999px; /* 角を完全に丸くしてモダンで柔らかな印象にする */
+  }
+
+  /* スクロールバーのつまみにマウスオーバーした時のスタイル */
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(255, 255, 255, 0.3); /* マウスを乗せた時は少し明るくして、操作できることを直感的に伝える */
+  }
+
+  /* Firefox向けのスクロールバー設定 
+     ※Firefoxは上記のような細かいパーツごとの指定ができないため、専用のプロパティで対応します */
+  * {
+    scrollbar-width: thin; /* スクロールバー全体を細くする */
+    scrollbar-color: rgba(255, 255, 255, 0.15) transparent; /* つまみの色 トラックの色（透明） */
+  }
+}

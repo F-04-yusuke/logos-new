@@ -1,5 +1,19 @@
-<aside :class="sidebarOpen ? 'w-64' : 'w-16'" 
-        class="flex-shrink-0 bg-white dark:bg-[#1e1f20] border-r border-gray-200 dark:border-gray-800 flex flex-col h-full transition-all duration-300 ease-in-out overflow-hidden">
+{{-- 
+   【新規追加】スマホメニュー用の半透明オーバーレイ背景
+   サイドバーが開いている時だけスマホ画面全体を暗くし、タップするとサイドバーが閉じます。
+--}}
+<div x-show="sidebarOpen" 
+     @click="sidebarOpen = false" 
+     x-transition.opacity 
+     class="fixed inset-0 z-40 bg-black/50 md:hidden" x-cloak></div>
+
+{{-- 
+   【修正】スマホ対応：
+   - PC(md以上): 相対配置(relative)で、開閉幅(w-64 / w-16)を切り替え。
+   - スマホ: 絶対配置(absolute)で画面上に浮かせ、閉じた時は幅0(-translate-x-full)で完全に隠す。
+--}}
+<aside :class="sidebarOpen ? 'translate-x-0 w-64' : '-translate-x-full w-64 md:translate-x-0 md:w-16'" 
+        class="absolute md:relative z-50 flex-shrink-0 bg-white dark:bg-[#1e1f20] border-r border-gray-200 dark:border-gray-800 flex flex-col h-full transform transition-all duration-300 ease-in-out overflow-hidden">
 
     <div class="h-16 flex items-center px-4 shrink-0 border-b border-transparent">
         <button @click="sidebarOpen = !sidebarOpen" class="inline-flex items-center justify-center p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-900 dark:hover:text-gray-300 focus:outline-none transition">
