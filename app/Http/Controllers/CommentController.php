@@ -102,6 +102,17 @@ class CommentController extends Controller
             'parent_id' => $comment->id, // ここで親コメントと紐付けます
         ]);
 
+        // 通知：返信先コメントの作成者が別ユーザーの場合のみ通知を送る（自己返信は通知しない）
+        if ($comment->user_id !== $user->id) {
+            \App\Models\Notification::create([
+                'user_id'         => $comment->user_id, // 通知を受け取る元コメントの作成者
+                'actor_id'        => $user->id,         // 返信したユーザー
+                'type'            => 'comment_reply',
+                'notifiable_type' => 'comment',
+                'notifiable_id'   => $comment->id,      // 返信先（親）コメントのID
+            ]);
+        }
+
         return back()->with('status', '返信を投稿しました。');
     }
 }

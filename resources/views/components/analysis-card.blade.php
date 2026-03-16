@@ -150,9 +150,35 @@
     @endif
 
     <div class="mt-1 flex items-center justify-between border-t border-gray-100 dark:border-gray-800 pt-3">
-        <a href="{{ route('analyses.show', $analysis) }}" class="text-xs font-bold text-blue-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex items-center py-1 pr-2">
-            もっと見る <span class="ml-1 text-[10px]" aria-hidden="true">▶</span>
-        </a>
+        @php
+            // 作成者本人 or PRO会員 → 詳細ページへ遷移
+            // 無料会員 → PROアップグレードモーダルを表示
+            $canViewDetail = auth()->user()->is_pro || $analysis->user_id === auth()->id();
+            $toolLabel = match($analysis->type) {
+                'tree'   => 'ロジックツリー分析',
+                'matrix' => '総合評価表',
+                'swot'   => 'SWOT / PEST分析',
+                'image'  => 'オリジナル図解',
+                default  => '図解の詳細',
+            };
+        @endphp
+
+        @if($canViewDetail)
+            <a href="{{ route('analyses.show', $analysis) }}" class="text-xs font-bold text-blue-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex items-center py-1 pr-2">
+                もっと見る <span class="ml-1 text-[10px]" aria-hidden="true">▶</span>
+            </a>
+        @else
+            {{-- 無料会員: リンクではなくモーダルトリガーボタンに差し替え --}}
+            <button
+                @click="$dispatch('open-pro-modal', { feature: '{{ $toolLabel }}の詳細' })"
+                class="text-xs font-bold text-yellow-500 hover:text-yellow-400 transition-colors flex items-center gap-1 py-1 pr-2"
+            >
+                <svg aria-hidden="true" class="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+                </svg>
+                もっと見る <span class="text-[9px] ml-0.5 bg-yellow-500/20 text-yellow-400 px-1 rounded font-black">PRO</span>
+            </button>
+        @endif
 
         <div class="flex items-center gap-4">
             @if ($analysis->user_id === auth()->id())

@@ -25,7 +25,7 @@ class LikeController extends Controller
         if ($like) {
             // その記録を消します。（つまり「いいね」の取り消しです）
             $like->delete();
-            
+
         // ④ もし、$like の箱が「空っぽ（まだいいねした記録がない）」だったら…
         } else {
             // likes テーブルに、新しく「この人が、この投稿にいいねしました」という記録を作成（保存）します。
@@ -33,6 +33,17 @@ class LikeController extends Controller
                 'user_id' => $user_id,
                 'post_id' => $post->id,
             ]);
+
+            // 通知：投稿者が別ユーザーの場合のみ通知を送る（自分の投稿への自己いいねは通知しない）
+            if ($post->user_id !== $user_id) {
+                \App\Models\Notification::create([
+                    'user_id'         => $post->user_id, // 通知を受け取る投稿者
+                    'actor_id'        => $user_id,       // いいねしたユーザー
+                    'type'            => 'post_like',
+                    'notifiable_type' => 'post',
+                    'notifiable_id'   => $post->id,
+                ]);
+            }
         }
 
         // ⑤ 処理が終わったら、元の画面（トピック詳細画面）にそのまま戻ります。

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Analysis;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Gate;
 
 class AnalysisController extends Controller
 {
@@ -58,10 +59,9 @@ class AnalysisController extends Controller
     // 図解の閲覧ページを表示
     public function show(Analysis $analysis)
     {
-        // 非公開（下書き）のものは、作成者本人しか見られないようにブロック
-        if (!$analysis->is_published && $analysis->user_id !== auth()->id()) {
-            abort(403);
-        }
+        // Policyで「作成者本人 or PRO会員」のみ閲覧を許可
+        // 無料会員が直接URLをたたいた場合も403でブロック
+        Gate::authorize('view', $analysis);
 
         return view('analyses.show', compact('analysis'));
     }

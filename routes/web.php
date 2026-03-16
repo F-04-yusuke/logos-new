@@ -93,16 +93,16 @@ Route::patch('/comments/{comment}', [\App\Http\Controllers\CommentController::cl
 Route::delete('/comments/{comment}', [\App\Http\Controllers\CommentController::class, 'destroy'])->name('comments.destroy')->middleware('auth');
 Route::post('/comments/{comment}/like', [\App\Http\Controllers\CommentController::class, 'toggleLike'])->name('comments.like')->middleware('auth');
 
-// 分析ツール (PROプラン用)
-Route::middleware('auth')->prefix('tools')->name('tools.')->group(function () {
+// 分析ツール (PROプラン用) — 作成・保存・AIアシストはすべて 'pro' ミドルウェアでガード
+Route::middleware(['auth', 'pro'])->prefix('tools')->name('tools.')->group(function () {
     Route::get('/tree', function () { return view('tools.tree'); })->name('tree');
     Route::get('/matrix', function () { return view('tools.matrix'); })->name('matrix');
     Route::get('/swot', function () { return view('tools.swot'); })->name('swot');
-// 保存用のPOSTルート
+    // 保存用のPOSTルート
     Route::post('/store', [AnalysisController::class, 'store'])->name('store');
-// 公開用のルート
+    // 公開用のルート
     Route::post('/analyses/{analysis}/publish', [AnalysisController::class, 'publish'])->name('publish');
-// AIアシスタント用のルート
+    // AIアシスタント用のルート
     Route::post('/ai-assist', [AnalysisController::class, 'aiAssist'])->name('ai_assist');
 });
 
@@ -125,6 +125,16 @@ Route::post('/analyses/{analysis}/supplement', [\App\Http\Controllers\Supplement
 
 // コメントへの返信ルート
 Route::post('/comments/{comment}/reply', [\App\Http\Controllers\CommentController::class, 'reply'])->name('comments.reply')->middleware('auth');
+
+// 通知機能のルート
+Route::middleware('auth')->group(function () {
+    // 通知一覧（開いた時点で全既読にする）
+    Route::get('/notifications', [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
+    // 全通知を一括既読
+    Route::patch('/notifications/read-all', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.readAll');
+    // 特定通知を既読にして関連ページへリダイレクト
+    Route::patch('/notifications/{notification}/read', [\App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.read');
+});
 
 require __DIR__.'/auth.php';
 

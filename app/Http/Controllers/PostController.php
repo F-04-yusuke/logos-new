@@ -61,7 +61,18 @@ class PostController extends Controller
             'thumbnail_url' => $thumbnail_url, // 取得したサムネイル画像
         ]);
 
-        // 3. 元の詳細画面（topics.show）に戻り、成功メッセージを表示する
+        // 3. 通知：トピック作成者が別ユーザーの場合のみ通知を送る（自己投稿は通知しない）
+        if ($topic->user_id !== $request->user()->id) {
+            \App\Models\Notification::create([
+                'user_id'         => $topic->user_id,      // 通知を受け取るトピック作成者
+                'actor_id'        => $request->user()->id, // エビデンスを追加したユーザー
+                'type'            => 'new_post',
+                'notifiable_type' => 'topic',
+                'notifiable_id'   => $topic->id,
+            ]);
+        }
+
+        // 4. 元の詳細画面（topics.show）に戻り、成功メッセージを表示する
         return redirect()->route('topics.show', $topic)->with('status', 'エビデンス（投稿）を追加しました！');
     }
 

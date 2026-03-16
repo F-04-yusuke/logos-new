@@ -11,7 +11,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // エイリアス登録: ルートで 'pro' と書くだけで適用できる
+        $middleware->alias([
+            'pro'      => \App\Http\Middleware\RequiresPro::class,
+            'is_admin' => \App\Http\Middleware\IsAdmin::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

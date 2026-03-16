@@ -21,6 +21,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'is_pro', // PROプラン会員フラグ（Stripe Webhook連携時に更新）
     ];
 
     /**
@@ -93,5 +94,17 @@ class User extends Authenticatable
         return $this->belongsToMany(Topic::class, 'topic_views')
                     ->withPivot('last_viewed_at')
                     ->orderByPivot('last_viewed_at', 'desc');
+    }
+
+    // このユーザーへの通知を取得する
+    public function notifications()
+    {
+        return $this->hasMany(\App\Models\Notification::class);
+    }
+
+    // 未読通知の件数を返す（ヘッダーのバッジ表示に使う）
+    public function unreadNotificationsCount(): int
+    {
+        return $this->notifications()->whereNull('read_at')->count();
     }
 }
