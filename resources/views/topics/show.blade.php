@@ -140,10 +140,11 @@
             </div>
             {{-- （ここまで） --}}
 
-            <div x-data="{ 
+            <div x-data="{
                     activeTab: sessionStorage.getItem('activeTab_{{ $topic->id }}') || '{{ request()->has('comment_sort') ? 'comments' : 'info' }}',
                     isModalOpen: false,
-                    isAnalysisModalOpen: false 
+                    isAnalysisModalOpen: false,
+                    isDraft: false
                  }"
                 x-init="$watch('activeTab', value => sessionStorage.setItem('activeTab_{{ $topic->id }}', value))"
                 class="mt-4">
@@ -199,6 +200,8 @@
                                 <div class="p-4 sm:p-6 overflow-y-auto flex-1 bg-white dark:bg-[#131314]">
                                     <form method="POST" action="{{ route('posts.store', $topic) }}" id="post-form">
                                         @csrf
+                                        {{-- 下書き(0) or 公開(1) を Alpine.js で動的に切り替える --}}
+                                        <input type="hidden" name="is_published" :value="isDraft ? '0' : '1'">
                                         <div class="mb-5">
                                             <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">参考URL (必須)</label>
                                             <input type="url" name="url" class="w-full rounded-md bg-gray-50 border-gray-300 dark:bg-[#1e1f20] dark:border-gray-700 dark:text-white text-base sm:text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 py-3 sm:py-2" required placeholder="https://...">
@@ -221,9 +224,25 @@
                                         </div>
                                     </form>
                                 </div>
-                                <div class="px-4 py-3 sm:px-6 sm:py-4 border-t border-gray-200 dark:border-gray-800 flex justify-end gap-3 bg-gray-50 dark:bg-[#1e1f20]">
+                                <div class="px-4 py-3 sm:px-6 sm:py-4 border-t border-gray-200 dark:border-gray-800 flex justify-between items-center gap-3 bg-gray-50 dark:bg-[#1e1f20]">
                                     <button @click="isModalOpen = false" type="button" class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 font-bold py-3 px-4 sm:py-2 rounded-md text-sm transition-colors">キャンセル</button>
-                                    <button type="submit" form="post-form" class="bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 text-white font-bold py-3 px-6 sm:py-2 rounded-md text-sm transition-colors">投稿する</button>
+                                    <div class="flex items-center gap-2">
+                                        {{-- 下書きとして保存ボタン --}}
+                                        <button type="button"
+                                            @click="isDraft = true; $nextTick(() => document.getElementById('post-form').submit())"
+                                            class="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 border border-gray-300 dark:border-gray-600 font-bold py-3 px-4 sm:py-2 rounded-md text-sm transition-colors flex items-center gap-1">
+                                            <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                                            </svg>
+                                            下書き保存
+                                        </button>
+                                        {{-- 本投稿ボタン --}}
+                                        <button type="button"
+                                            @click="isDraft = false; $nextTick(() => document.getElementById('post-form').submit())"
+                                            class="bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 text-white font-bold py-3 px-6 sm:py-2 rounded-md text-sm transition-colors">
+                                            投稿する
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>

@@ -70,8 +70,8 @@ class AnalysisController extends Controller
     public function aiAssist(Request $request)
     {
         $request->validate([
-            'prompt' => 'required|string',
-            'context' => 'nullable|string', // 画面の現在のツリーや表のデータ
+            'prompt'  => 'required|string|max:5000',
+            'context' => 'nullable|string|max:10000', // 画面の現在のツリーや表のデータ
         ]);
 
         $apiKey = env('GEMINI_API_KEY');
@@ -161,10 +161,15 @@ class AnalysisController extends Controller
             abort(403, '権限がありません。');
         }
 
+        $validated = $request->validate([
+            'title' => 'nullable|string|max:255',
+            'data'  => 'required|array',
+        ]);
+
         // タイトルと中身(data)を上書き保存
         $analysis->update([
-            'title' => $request->title ?? $analysis->title,
-            'data' => $request->data,
+            'title' => $validated['title'] ?? $analysis->title,
+            'data'  => $validated['data'],
         ]);
 
         return response()->json(['message' => '分析データを上書き保存しました！']);

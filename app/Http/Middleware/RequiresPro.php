@@ -16,7 +16,8 @@ class RequiresPro
             if ($request->expectsJson()) {
                 return response()->json([
                     'error'       => 'PRO会員限定の機能です。',
-                    'upgrade_url' => route('upgrade.show'),
+                    // upgrade.show ルートはフェーズ4（Stripe実装後）に定義予定
+                    'upgrade_url' => url('/upgrade'),
                 ], 403);
             }
 

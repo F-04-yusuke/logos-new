@@ -106,15 +106,16 @@ class TopicController extends Controller
     {
         // 1. 入力チェック（バリデーション）
         $request->validate([
-            'title' => 'required|string|max:255',
-            'content' => 'required|string',
+            'title'           => 'required|string|max:255',
+            'content'         => 'required|string|max:20000',
             // 🌟 変更：カテゴリIDの配列を受け取り、最大2つまでに制限する
-            'category_ids' => 'required|array|max:2|min:1',
-            'category_ids.*' => 'exists:categories,id', // 存在するカテゴリかチェック
+            'category_ids'    => 'required|array|max:2|min:1',
+            'category_ids.*'  => 'exists:categories,id', // 存在するカテゴリかチェック
         ], [
             // エラーメッセージを日本語で分かりやすくする
             'category_ids.required' => 'カテゴリを少なくとも1つ選択してください。',
-            'category_ids.max' => 'カテゴリは最大2つまでしか選択できません。',
+            'category_ids.max'      => 'カテゴリは最大2つまでしか選択できません。',
+            'content.max'           => '本文は20,000文字以内で入力してください。',
         ]);
 
         // 2. トピック本体を保存する
@@ -144,8 +145,9 @@ class TopicController extends Controller
             );
         }
         // ① まず、このトピックに紐づくエビデンス（投稿）を取得する準備をします
+        // 公開済み（is_published = true）のみ表示。下書きはダッシュボードでのみ確認可能。
         // URLに「?category=YouTube」などがついていたら、その分類だけで絞り込む
-        $query = $topic->posts()->with('user');
+        $query = $topic->posts()->with('user')->where('is_published', true);
 
         // ② メディア分類（YouTube、記事など）での絞り込み
         if ($request->filled('category')) {
@@ -256,16 +258,19 @@ class TopicController extends Controller
 
         // 🌟 追加：入力内容とカテゴリが正しく選ばれているかチェック
         $request->validate([
-            'title' => 'required|string|max:255',
-            'content' => 'required|string',
-            'category_ids' => 'required|array|max:2|min:1',
-            'category_ids.*' => 'exists:categories,id',
+            'title'            => 'required|string|max:255',
+            'content'          => 'required|string|max:20000',
+            'category_ids'     => 'required|array|max:2|min:1',
+            'category_ids.*'   => 'exists:categories,id',
             // 🌟 追加：時系列データのチェックもここに入れます
-            'timeline_date' => 'nullable|array',
-            'timeline_event' => 'nullable|array',
+            'timeline_date'    => 'nullable|array',
+            'timeline_date.*'  => 'nullable|string|max:50',
+            'timeline_event'   => 'nullable|array',
+            'timeline_event.*' => 'nullable|string|max:500',
         ], [
             'category_ids.required' => 'カテゴリを少なくとも1つ選択してください。',
-            'category_ids.max' => 'カテゴリは最大2つまでしか選択できません。',
+            'category_ids.max'      => 'カテゴリは最大2つまでしか選択できません。',
+            'content.max'           => '本文は20,000文字以内で入力してください。',
         ]);
 
         // 🌟 新機能：時系列データの組み立て

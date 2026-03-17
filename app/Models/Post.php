@@ -10,7 +10,11 @@ class Post extends Model
     use HasFactory;
 
     // アプリ画面からのデータ保存を許可するカラム
-    protected $fillable = ['topic_id', 'url', 'category', 'comment', 'title', 'thumbnail_url','supplement',];
+    protected $fillable = ['topic_id', 'url', 'category', 'comment', 'title', 'thumbnail_url', 'supplement', 'is_published'];
+
+    protected $casts = [
+        'is_published' => 'boolean',
+    ];
 
     // この投稿は、1人のユーザーに属している（多対1）
     public function user()

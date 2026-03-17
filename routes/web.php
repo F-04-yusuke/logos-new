@@ -113,8 +113,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/analyses/{analysis}/edit', [\App\Http\Controllers\AnalysisController::class, 'edit'])->name('analyses.edit');
     Route::patch('/analyses/{analysis}', [\App\Http\Controllers\AnalysisController::class, 'update'])->name('analyses.update');
 });
-// 分析・図解の削除ルート
-Route::delete('/analyses/{analysis}', [\App\Http\Controllers\AnalysisController::class, 'destroy'])->name('analyses.destroy');
+// 分析・図解の削除ルート（※ authミドルウェアを追加）
+Route::delete('/analyses/{analysis}', [\App\Http\Controllers\AnalysisController::class, 'destroy'])->name('analyses.destroy')->middleware('auth');
 
 // 分析・図解のいいねルート
 Route::post('/analyses/{analysis}/like', [\App\Http\Controllers\AnalysisController::class, 'toggleLike'])->name('analyses.like')->middleware('auth');
