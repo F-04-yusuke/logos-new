@@ -82,7 +82,10 @@ class PostController extends Controller
 
         // 4. 下書きはダッシュボードへ、公開はトピック詳細へ戻る
         if (!$isPublished) {
-            return redirect()->route('dashboard')->with('status', '下書きとして保存しました。ダッシュボードの「下書き」タブから確認できます。');
+            return redirect()->route('dashboard')->with([
+                'status'     => '下書きとして保存しました。ダッシュボードの「下書き」タブから確認できます。',
+                'draft_saved' => true,
+            ]);
         }
         return redirect()->route('topics.show', $topic)->with('status', 'エビデンス（投稿）を追加しました！');
     }
@@ -172,7 +175,10 @@ class PostController extends Controller
             return redirect()->route('topics.show', $post->topic_id)->with('status', 'エビデンスを公開しました！');
         }
 
-        return redirect()->route('dashboard')->with('status', '下書きを保存しました。');
+        return redirect()->route('dashboard')->with([
+            'status'     => '下書きを保存しました。',
+            'draft_saved' => true,
+        ]);
     }
 
     // エビデンス（投稿）を削除する処理（destroy） 

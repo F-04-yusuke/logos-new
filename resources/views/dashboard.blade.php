@@ -50,34 +50,16 @@
 
                     {{-- 下書き一覧 --}}
                     <div x-show="activeTab === 'drafts'" x-cloak class="space-y-4">
-                        @forelse(auth()->user()->posts()->where('is_published', false)->with('topic')->latest()->get() as $post)
-                            <div class="p-4 bg-white dark:bg-[#131314] rounded-lg border border-yellow-200 dark:border-yellow-900/40 shadow-sm">
-                                <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                                    <div class="flex-1 min-w-0">
-                                        {{-- 下書きバッジ + URL --}}
-                                        <div class="flex items-center gap-2 mb-1.5">
-                                            <span class="text-[10px] font-black bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 px-2 py-0.5 rounded shrink-0">下書き</span>
-                                            <a href="{{ $post->url }}" target="_blank" rel="noopener noreferrer" class="text-xs text-blue-500 hover:underline truncate">{{ $post->url }}</a>
-                                        </div>
-                                        {{-- メディア分類 --}}
-                                        <div class="flex items-center gap-2 mb-1">
-                                            <span class="text-[11px] text-gray-500 dark:text-gray-400">分類：{{ $post->category }}</span>
-                                            <span class="text-[11px] text-gray-400">・</span>
-                                            <span class="text-[11px] text-gray-400">{{ $post->created_at->diffForHumans() }}</span>
-                                        </div>
-                                        {{-- コメント --}}
-                                        @if($post->comment)
-                                        <p class="text-xs text-gray-700 dark:text-gray-300 line-clamp-2">{{ $post->comment }}</p>
-                                        @endif
-                                        {{-- 投稿先トピック --}}
-                                        <div class="mt-2 text-[11px] text-gray-500 dark:text-gray-400">
-                                            🔗 投稿先: <a href="{{ route('topics.show', $post->topic_id) }}" class="text-blue-500 hover:text-blue-600 dark:text-blue-400 transition-colors">{{ $post->topic->title }}</a>
-                                        </div>
-                                    </div>
-                                    {{-- アクションボタン --}}
-                                    <div class="flex items-center gap-3 shrink-0 self-end sm:self-auto">
+                        @forelse(auth()->user()->posts()->where('is_published', false)->with('topic', 'user')->latest()->get() as $post)
+                            <div class="flex flex-col gap-1.5">
+                                {{-- 下書きバッジ付きのpost-cardコンポーネント（draft=trueで点線サムネイル） --}}
+                                <x-post-card :post="$post" :draft="true" />
+                                {{-- アクションボタンとトピックリンクをカード下に配置 --}}
+                                <div class="flex justify-between items-center px-2">
+                                    <div class="flex items-center gap-3">
+                                        <span class="text-[10px] font-black bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 px-2 py-0.5 rounded">下書き</span>
                                         <a href="{{ route('posts.edit', $post) }}"
-                                           class="text-xs font-bold text-yellow-600 dark:text-yellow-400 hover:text-yellow-700 dark:hover:text-yellow-300 border border-yellow-300 dark:border-yellow-700 hover:border-yellow-400 py-1.5 px-3 rounded-md transition-colors flex items-center gap-1">
+                                           class="text-xs font-bold text-yellow-600 dark:text-yellow-400 hover:text-yellow-700 dark:hover:text-yellow-300 border border-yellow-300 dark:border-yellow-700 hover:border-yellow-400 py-1 px-3 rounded-md transition-colors flex items-center gap-1">
                                             <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                                             </svg>
@@ -85,8 +67,13 @@
                                         </a>
                                         <form method="POST" action="{{ route('posts.destroy', $post) }}" onsubmit="return confirm('下書きを削除しますか？');" class="m-0 p-0">
                                             @csrf @method('DELETE')
-                                            <button type="submit" class="text-xs text-red-400 hover:text-red-600 font-bold transition-colors py-1.5 px-2">削除</button>
+                                            <button type="submit" class="text-xs text-red-400 hover:text-red-600 font-bold transition-colors py-1 px-2">削除</button>
                                         </form>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-[11px] font-bold text-gray-500 dark:text-gray-400">
+                                            🔗 投稿先: <a href="{{ route('topics.show', $post->topic_id) }}" class="text-blue-500 hover:text-blue-600 dark:text-blue-400 transition-colors">{{ $post->topic->title }}</a>
+                                        </span>
                                     </div>
                                 </div>
                             </div>

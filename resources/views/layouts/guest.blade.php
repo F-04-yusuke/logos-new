@@ -14,11 +14,10 @@
         <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0">
             
             <div class="mb-4">
-                <a href="/" class="flex items-center gap-3 hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg p-1">
-                    {{-- 【修正】スクリーンリーダー用にテキストを追加し、装飾は隠す --}}
+                <a href="/" class="hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg p-1">
                     <span class="sr-only">LOGOSトップページへ戻る</span>
-                    <x-application-logo class="w-10 h-10 fill-current text-blue-600 dark:text-blue-500" aria-hidden="true" />
-                    <span class="text-4xl font-black text-blue-900 dark:text-blue-400 tracking-widest" aria-hidden="true">LOGOS</span>
+                    {{-- application-logo コンポーネント内に SVG + "LOGOS" テキストが含まれるため、ここでは呼び出すだけ --}}
+                    <x-application-logo aria-hidden="true" />
                 </a>
             </div>
 

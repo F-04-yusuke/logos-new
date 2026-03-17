@@ -13,9 +13,13 @@ class CommentController extends Controller
     {
         $request->validate(['body' => 'required|string|max:1000']);
 
-        // すでにコメントしていないか念のためチェック
-        if ($topic->comments()->where('user_id', auth()->id())->exists()) {
-            return back()->with('error', 'コメントは1人1件までです。');
+        // 親コメントは1トピックにつき1ユーザー1件のみ（返信は含まない）
+        $hasRootComment = $topic->comments()
+            ->where('user_id', auth()->id())
+            ->whereNull('parent_id')
+            ->exists();
+        if ($hasRootComment) {
+            return back()->with('error', 'コメントは1トピックにつき1件までです。');
         }
 
         $topic->comments()->create([

@@ -1,9 +1,17 @@
-@props(['post'])
+@props(['post', 'draft' => false])
 
-<div class="p-3 bg-white dark:bg-[#1e1f20] rounded-lg border border-gray-200 dark:border-transparent shadow-sm flex flex-col md:flex-row gap-3 transition-colors">
+<div class="{{ $draft ? 'border-dashed border-yellow-300 dark:border-yellow-800/60' : 'border-gray-200 dark:border-transparent' }} p-3 bg-white dark:bg-[#1e1f20] rounded-lg border shadow-sm flex flex-col md:flex-row gap-3 transition-colors">
     <div class="md:w-1/4 flex-shrink-0">
         <a href="{{ $post->url }}" target="_blank" class="block group">
-            @if($post->thumbnail_url)
+            @if($draft)
+            {{-- 下書き：OGP未取得のためプレースホルダーを表示 --}}
+            <div class="w-full aspect-video bg-gray-50 dark:bg-[#131314] rounded-md mb-2 flex flex-col items-center justify-center text-gray-400 border-2 border-dashed border-yellow-300 dark:border-yellow-800/60 transition-colors">
+                <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 mb-1 text-yellow-400 dark:text-yellow-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                </svg>
+                <span class="text-[11px] text-yellow-500 dark:text-yellow-700 font-bold">準備中</span>
+            </div>
+            @elseif($post->thumbnail_url)
             <div class="w-full aspect-video rounded-md overflow-hidden mb-2 bg-gray-100 dark:bg-gray-800">
                 <img src="{{ $post->thumbnail_url }}" alt="サムネイル" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
             </div>
@@ -15,7 +23,13 @@
                 <span class="text-xs">No Image</span>
             </div>
             @endif
-            <h4 class="font-bold text-sm text-gray-900 dark:text-gray-100 group-hover:text-blue-500 dark:group-hover:text-blue-400 line-clamp-2 leading-tight transition-colors">{{ $post->title ?: 'タイトルを取得できませんでした' }}</h4>
+            <h4 class="font-bold text-sm text-gray-900 dark:text-gray-100 group-hover:text-blue-500 dark:group-hover:text-blue-400 line-clamp-2 leading-tight transition-colors">
+                @if($draft)
+                    <span class="text-yellow-600 dark:text-yellow-500">※本投稿時にサムネイルとタイトルを自動取得します</span>
+                @else
+                    {{ $post->title ?: 'タイトルを取得できませんでした' }}
+                @endif
+            </h4>
         </a>
     </div>
     

@@ -146,7 +146,10 @@
                     isAnalysisModalOpen: false,
                     isDraft: false
                  }"
-                x-init="$watch('activeTab', value => sessionStorage.setItem('activeTab_{{ $topic->id }}', value))"
+                x-init="
+                    $watch('activeTab', value => sessionStorage.setItem('activeTab_{{ $topic->id }}', value));
+                    $watch('isModalOpen', val => { if (!val) $nextTick(() => { const f = document.getElementById('post-form'); if (f) f.reset(); }) })
+                "
                 class="mt-4">
 
                 <div class="flex border-b border-gray-300 dark:border-gray-800 mb-4 overflow-x-auto scrollbar-hide">

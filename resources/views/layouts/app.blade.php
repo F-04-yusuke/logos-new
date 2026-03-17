@@ -22,6 +22,8 @@
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    {{-- Alpine.js の x-cloak が CSS読み込み前に機能するよう、インラインで定義 --}}
+    <style>[x-cloak] { display: none !important; }</style>
 </head>
 
 <body class="font-sans antialiased bg-gray-100 dark:bg-[#131314]">
