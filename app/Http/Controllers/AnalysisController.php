@@ -74,7 +74,7 @@ class AnalysisController extends Controller
             'context' => 'nullable|string|max:10000', // 画面の現在のツリーや表のデータ
         ]);
 
-        $apiKey = env('GEMINI_API_KEY');
+        $apiKey = config('services.gemini.api_key');
         if (!$apiKey) {
             return response()->json(['error' => 'APIキーが設定されていません。システム管理者にお問い合わせください。'], 500);
         }

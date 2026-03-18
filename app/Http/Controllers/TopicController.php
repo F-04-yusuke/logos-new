@@ -334,7 +334,7 @@ class TopicController extends Controller
             return back()->with('error', 'すでに時系列は生成されています。');
         }
 
-        $apiKey = env('GEMINI_API_KEY');
+        $apiKey = config('services.gemini.api_key');
         if (!$apiKey) {
             return back()->with('error', 'APIキーが設定されていません。');
         }
@@ -408,7 +408,7 @@ EOT;
             return back()->with('error', 'まずは初期の時系列を生成してください。');
         }
 
-        $apiKey = env('GEMINI_API_KEY');
+        $apiKey = config('services.gemini.api_key');
         if (!$apiKey) {
             return back()->with('error', 'APIキーが設定されていません。');
         }
