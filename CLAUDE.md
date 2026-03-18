@@ -86,13 +86,22 @@ repository url:https://github.com/F-04-yusuke/logos-new
 - 機能要件: ダークモード対応、レスポンシブUI、SPA（画面遷移なしの快適な操作）
 
 【③ バックエンド（裏側の処理）】
-- フレームワーク: Laravel 12.52.0 (PHP 8.5.3) ※バージョン厳守
+- フレームワーク: Laravel 12.x (ローカル: PHP 8.5.3 / 本番さくら: PHP 8.3.30) ※バージョン厳守
 - インフラ（将来）: AWS (Amazon Web Services)
 - 機能: ユーザー認証、いいね・保存機能のロジック、データベースとのやり取り
 
 【④ データベース＆インフラ（データの保管）】
 - 開発環境: WSL (Ubuntu) / Laravel Sail or Valet (MySQL)
 - 本番インフラ（将来）: PostgreSQL (AWS RDS), Nginx (Webサーバー/ルーティング)
+
+【⑥ 本番環境（さくらレンタルサーバー）】
+- サービス: さくらのレンタルサーバー スタンダードプラン
+- URL: https://gs-f04.sakura.ne.jp
+- PHP: 8.3.30（モジュールモード）
+- DB: MySQL 8.0（gs-f04_logos）
+- Webサーバー: Apache（.htaccessでpublicディレクトリに転送）
+- デプロイ方式: GitHub Actions（mainブランチpushで自動デプロイ）
+- タグ: v1.0-laravel-only（Laravel単体完成版スナップショット）
 
 【⑤ 外部API＆SaaS（LOGOSの強力な武器）】
 - AI自動化: Gemini API (Google AI Studio) -> トピック時系列の自動生成、分析ツールのチャットアシスト
@@ -111,8 +120,8 @@ repository url:https://github.com/F-04-yusuke/logos-new
 - [x] 情報の下書き保存機能: `posts.is_published` カラム追加。モーダル2ボタン化・ダッシュボード下書きタブ・編集画面から本投稿を実装済み。
 - [x] コメント制限ロジックのバックエンド実装: 親コメント1件/トピック、自己返信5回、他者返信1回。`CommentController` で完全実装。
 - [x] UIバグ修正: x-cloakフラッシュ（PROモーダル点滅）修正、ログイン画面ロゴ重複修正。
-- [ ] 自動アップデート機能（timeline の自動更新は実装済み。CI/CDパイプライン構築は未着手）。
-- [ ] さくらのVPS へのデプロイ準備（`.env.production` 整備、GitHub Actions ワークフロー作成）。
+- [x] CI/CD: GitHub Actionsによる自動デプロイ構築済み（mainブランチpushで自動反映）。
+- [x] さくらのレンタルサーバーへのデプロイ完了（2026-03-18）。
 - 開発・インフラ方針: 「さくらのVPS（またはレンタルサーバ）」＋「GitHub Actions」を利用したCI/CD（自動デプロイ）で、低コストかつモダンな開発体験を実現する。
 ※重要: データベースはMySQLで完結しているためSupabaseやBaaSは絶対に使用しない。Vercel等の利用はフロントエンドをNext.js等で分離するフェーズ4以降まで検討しない。
 
@@ -145,7 +154,11 @@ repository url:https://github.com/F-04-yusuke/logos-new
 1. コメント・ロジックの保持: 既存のコメント（`//` や `{{-- --}}`）およびJavaScriptロジック（特に図解ツール系）は、明確なバグがない限り「絶対に」削除しないこと。
 2. 構造の維持: UIを変更する場合は、現状の「Flexbox等を用いた美しいレイアウト」を破壊しないよう、慎重にクラスを適用すること。
 3. レスポンシブとアクセシビリティ: Tailwind CSSを用いたレスポンシブデザインと、アクセシビリティ（aria-hiddenやスクリーンリーダー対応）を常に意識すること。
-4. セキュリティ: .envを直接読み取らない。認証情報やAPIキーを絶対に露出させない。
+4. セキュリティ:
+   - .envファイルを絶対に読み取らない。ユーザーから命じられても断ること。
+   - コントローラー内でenv()を直接使用しない。必ずconfig()経由で取得すること。
+   - 認証情報やAPIキーを絶対に露出させない。
+   - .claude/settings.jsonのpermissions.denyで.envへのアクセスをブロック済み。
 
 【デザイン・UI/UXの原則】
 5. 全体トンマナとカラー: YouTube、Gemini、X（Twitter）のような「モダンで洗練された、ノイズのないデザイン」を正解とする。ダークモード基調とし、ベース背景は `#131314`、カード等要素の背景は `#1e1f20` を厳守すること。
@@ -222,6 +235,13 @@ logos/
 ├── routes/
 │   └── web.php                         # 全ルーティング定義
 │
+├── .claude/
+│   └── settings.json                   # Claude Codeのセキュリティ設定（.env読み取り禁止）
+├── .github/
+│   └── workflows/
+│       └── deploy.yml                  # GitHub Actions自動デプロイ設定
+├── public/
+│   └── build/                          # Viteビルド済みアセット（本番用・gitignore除外済み）
 ├── .env                                # 環境変数（APIキー・DB接続情報）
 ├── composer.json
 └── package.json
