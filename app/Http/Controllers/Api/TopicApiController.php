@@ -9,7 +9,7 @@ class TopicApiController extends Controller
 {
     public function index()
     {
-        $topics = Topic::with(['user:id,name', 'category'])
+        $topics = Topic::with(['user:id,name', 'categories'])
             ->withCount(['posts', 'comments'])
             ->latest()
             ->paginate(20);
@@ -21,7 +21,7 @@ class TopicApiController extends Controller
     {
         $topic->load([
             'user:id,name',
-            'category',
+            'categories',
             'posts' => fn($q) => $q
                 ->where('is_published', true)
                 ->with('user:id,name')
