@@ -283,3 +283,81 @@ logos-next/
 - 方針: 現在のBladeをコンポーネント単位で分割する際は、将来的にReactコンポーネントへ変換しやすいようにロジックを分離しておくこと。
 
 <!-- 2026-03-18: さくらレンタルサーバーへのデプロイ完了・GitHub Actions自動デプロイ設定済み -->
+
+# 6. 本番環境（さくら）運用ルール（2026-03-19 追記）
+
+## さくら環境の正しい接続情報
+- SSHホスト: gs-f04.sakura.ne.jp ポート:22
+- DBホスト: mysql3113.db.sakura.ne.jp
+- DBユーザー: gs-f04（管理ユーザー）
+- DB名: gs-f04_logos
+- PHPコマンド: php（/usr/local/bin/php）
+- シェル: csh（bashではない。heredoc非対応。eeエディタで編集可能）
+
+## パスワード管理（混同厳禁）
+さくらには3種類の独立したパスワードが存在する。
+- さくらCPパスワード: CPログイン・SSH接続に使用（登録メールに記載）
+- DBパスワード: MySQL接続・.envのDB_PASSWORDと一致させる
+- GitHub SSH秘密鍵: GitHub Actions自動デプロイ用（GitHub Secretsに登録済み）
+これらは完全に独立しており、一方を変えても他方には影響しない。
+DBパスワードを変更したら即座に.envを更新し接続テストを行うこと。
+パスワードリセットは最後の手段。何度もリセットしない。
+
+## デプロイフロー（厳守）
+必ずこの順番を守ること。サーバー上でファイルを直接編集しない。
+1. ローカル(WSL)で編集
+2. git commit & push
+3. GitHub Actions自動デプロイ（mainブランチpushで自動実行）
+4. SSHで以下を実行:
+   cd ~/www/logos
+   git pull origin main
+   php artisan migrate --force
+   php artisan config:cache
+   php artisan route:cache
+   php artisan view:clear
+
+## 新環境デプロイ後の必須チェックリスト
+- [ ] php artisan migrate --force（テーブル作成）
+- [ ] php artisan config:cache
+- [ ] 全ページの動作確認（トップ・トピック・ダッシュボード・カテゴリ管理）
+- [ ] adminユーザーのis_pro・is_adminをtrueに設定
+
+## Claude Codeへの依頼ルール
+- 一度に編集するファイルは5ファイル以内
+- 大規模改修後は必ず全ページ動作確認を実施
+- 編集前にバックアップコミットを作成する
+- migrate:fresh・db:wipe・sqlite切り替えは本番環境で絶対に実行しない
+
+## 2026-03-19 障害の教訓
+カテゴリ管理調査中に以下が発生した：
+- DB_CONNECTION=sqliteへの変更でMySQL接続が切断
+- パスワード複数回リセットによる.envとの不一致
+- categories/index.blade.phpがlikes/index.blade.phpの内容で汚染（a5a335aコミット）
+- サーバー上での直接ファイル作成によるgit pull競合
+Gitの履歴が調査・復元の唯一の手段となった。こまめなコミットを継続すること。
+
+# 8. フェーズ2開発方針（2026-03-19 確定）
+
+## UI/UX思想
+- 賛否（賛成・反対）のUI要素は導入しない。
+  理由: 2項対立ではまとめられないテーマが多い。
+  対立軸の可視化がユーザーの投稿をちゅうちょさせる懸念がある。
+- 「論点の地図」のUI案は別途壁打ちして決定する。
+
+## 技術スタック方針
+- フェーズ2のゴール: Next.js + LaravelのAPI構成でWebが動くこと
+- ZustandやReact Nativeなどフェーズ4以降の要素は今は設計に含めない
+- フェーズ4で完成形を決めるときに困らないよう、特定ライブラリへの過度な依存は避ける
+
+## 決済方針
+- Stripe Payment Linksを使う（コード実装なし）
+- フェーズ3でWebhookの受け口のみ実装
+- 決済コードの作り込みはしない
+
+## Claude Code（CLI）との役割分担
+- Claude Code: コード実装・ファイル編集・git操作
+- このチャット（claude.ai）: 設計判断・UIレビュー・エラーデバッグ・方針確認
+- UIの変更は必ずこのチャットで確認してから実装する
+
+## 大きな方針転換があった場合
+- 必ずCLAUDE.mdに追記してからClaude Codeに伝える
