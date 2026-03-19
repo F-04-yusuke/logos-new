@@ -160,6 +160,14 @@ repository url:https://github.com/F-04-yusuke/logos-new
    - 認証情報やAPIキーを絶対に露出させない。
    - .claude/settings.jsonのpermissions.denyで.envへのアクセスをブロック済み。
 
+## Gemini APIキーのNext.js移行時の注意（2026-03-20追記）
+- GeminiのAPIキーは絶対に `NEXT_PUBLIC_` をつけない
+- `NEXT_PUBLIC_` をつけるとブラウザに公開されて攻撃者に悪用される
+- Next.jsからGeminiを呼ぶ場合は必ずサーバーサイド経由
+  （`app/api/` ルートハンドラかLaravel API経由）
+- フロントエンド（ブラウザで動くコード）にAPIキーを書かない
+- 参考: https://gigazine.net/news/20260227-google-api-key-gemini/
+
 【デザイン・UI/UXの原則】
 5. 全体トンマナとカラー: YouTube、Gemini、X（Twitter）のような「モダンで洗練された、ノイズのないデザイン」を正解とする。ダークモード基調とし、ベース背景は `#131314`、カード等要素の背景は `#1e1f20` を厳守すること。
 6. 余白と質感（ボーダー・シャドウ）: 重苦しいボーダー（太い枠線）や野暮ったい箱型は極力避け、背景色の微細な違いや、ホバー時の軽いシャドウ（`hover:shadow-md`）、スケールアップ（`hover:scale-105`）を活用してコンテンツを直感的に浮かび上がらせる。
