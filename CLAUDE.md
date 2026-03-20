@@ -296,6 +296,9 @@ logos-next/
 
 ## さくら環境の正しい接続情報
 - SSHホスト: gs-f04.sakura.ne.jp ポート:22
+- SSHユーザー名: gs-f04（tasakiではない）
+- SSH接続コマンド: ssh gs-f04@gs-f04.sakura.ne.jp
+- SSH鍵認証済み（パスワード不要）
 - DBホスト: mysql3113.db.sakura.ne.jp
 - DBユーザー: gs-f04（管理ユーザー）
 - DB名: gs-f04_logos
@@ -479,6 +482,9 @@ LOGOSのフェーズ2開発をサポートしてください。
 - composerは~/bin/composerに手動インストール済み
 - DBホスト: mysql3113.db.sakura.ne.jp
 - SSHホスト: gs-f04.sakura.ne.jp ポート:22
+- SSHユーザー名: gs-f04（tasakiではない）
+- SSH接続コマンド: ssh gs-f04@gs-f04.sakura.ne.jp
+- SSH鍵認証済み（パスワード不要）
 
 【ローカル開発環境】
 - OS: Windows + WSL2(Ubuntu)
