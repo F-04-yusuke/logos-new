@@ -438,11 +438,12 @@ npm run dev  # または ./node_modules/.bin/next dev
 
 ## 認証方針（2026-03-20確定）
 - Next.js側の認証はLaravel Sanctumのトークン認証（APIトークン方式）を使う
-- 理由: LaravelにユーザーDBが集約されており、Sanctumインストール済みのため
+- 理由: LaravelにユーザーDBが集約、Sanctumインストール済みのため
 - NextAuth.jsは使わない（ユーザー管理の二重化を避けるため）
-- VercelとさくらがドメインをまたぐためCookieベースではなくTokenベース認証
-- トークンはlocalStorageではなくhttpOnly Cookie or メモリ管理を検討
-- 実装順: ログイン画面→トークン取得→/api/user/meで認証確認→サイドバー表示
+- VercelとさくらがドメインをまたぐためCookieではなくTokenベース認証
+- トークン保存はlocalStorage（フェーズ2簡易実装）→フェーズ3でhttpOnly Cookie化
+- 実装順: ログイン画面→POST /api/login→トークン取得→localStorage保存
+  →/api/user/meで認証確認→サイドバー表示
 
 ## 検証ルール（2026-03-20確定）
 - 実装完了後は必ずlocalhost:3000でブラウザ確認を行う
