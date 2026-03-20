@@ -123,7 +123,7 @@ repository url:https://github.com/F-04-yusuke/logos-new
 - [x] CI/CD: GitHub Actionsによる自動デプロイ構築済み（mainブランチpushで自動反映）。
 - [x] さくらのレンタルサーバーへのデプロイ完了（2026-03-18）。
 - 開発・インフラ方針: 「さくらのVPS（またはレンタルサーバ）」＋「GitHub Actions」を利用したCI/CD（自動デプロイ）で、低コストかつモダンな開発体験を実現する。
-※重要: データベースはMySQLで完結しているためSupabaseやBaaSは絶対に使用しない。Vercel等の利用はフロントエンドをNext.js等で分離するフェーズ4以降まで検討しない。
+※重要: データベースはMySQLで完結しているためSupabaseやBaaSは絶対に使用しない。VercelはNext.jsフロントエンド専用として使用する（フェーズ2から）。Laravelバックエンドはさくらのまま継続。
 
 💡 将来のUI/ABテスト案（フェーズ2以降で検討）
 - 投稿モーダルのインライン展開 vs モーダル表示（操作完了率の比較）
