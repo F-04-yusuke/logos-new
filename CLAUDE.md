@@ -435,3 +435,83 @@ npm run dev  # または ./node_modules/.bin/next dev
 - Next.jsを使うときはSailも起動が必要
   （LaravelのAPIを叩くため）
 - ./vendor/bin/sail up -d を先に実行
+
+# 10. 開発体制・引き継ぎルール（2026-03-20確定）
+
+## AI役割分担（厳守）
+- claude.ai（チャット）: 設計判断・UIレビュー・エラーデバッグ・スクショ確認・方針確認
+- Claude Code（CLI）: コード実装・ファイル編集・git操作・コマンド実行
+- UIの変更は必ずclaude.aiチャットで確認してから実装する
+- 検証はCLIのビルド確認＋ユーザーがブラウザで実際に触る2段構え
+
+## 新チャット開始時のプロンプト（毎回これを使う）
+あなたは「リードエンジニア兼PM」として
+LOGOSのフェーズ2開発をサポートしてください。
+添付のCLAUDE.mdが最新の仕様書です。必ず最初に熟読してください。
+
+【現在の本番環境】
+- URL: https://gs-f04.sakura.ne.jp（正常稼働中）
+- DB: mysql3113.db.sakura.ne.jp / DB名: gs-f04_logos
+- adminユーザー（admin@test.com）のis_pro・is_admin設定済み
+- GitHub Actions自動デプロイ稼働中（mainブランチpushで自動反映）
+- Gitタグ v1.0-phase1-complete でフェーズ1完成版を保存済み
+
+【さくら環境の注意事項（必ず守ること）】
+- PHPはさくらで8.3止まり
+- composer.jsonにplatform: php 8.3.30設定済み
+- config:cache実行後はenv()不可。必ずconfig()経由
+- Web公開は~/www/.htaccessでlogos/publicに転送
+- シェルはFreeBSD（csh）。bashではない。heredoc非対応
+- composerは~/bin/composerに手動インストール済み
+- DBホスト: mysql3113.db.sakura.ne.jp
+- SSHホスト: gs-f04.sakura.ne.jp ポート:22
+
+【ローカル開発環境】
+- OS: Windows + WSL2(Ubuntu)
+- エディタ: Cursor（Claude Code使用）
+- ローカルはLaravel Sail（Docker）で動いている
+- SailコンテナはPHP8.5だがcomposer.lockはPHP8.3互換で生成される
+- composerコマンド: ./vendor/bin/sail composer [コマンド]
+- phpコマンド: ./vendor/bin/sail php artisan [コマンド]
+- php単体コマンドはWSL上では使えない（command not found）
+- Sail起動: ./vendor/bin/sail up -d
+- Next.js起動: cd ~/logos-next && npm run dev
+- Next.js使用時はSailも起動が必要（APIを叩くため）
+
+【リポジトリ】
+- Laravel: https://github.com/F-04-yusuke/logos-new
+- Next.js: https://github.com/F-04-yusuke/logos-next
+- Next.jsローカルパス: ~/logos-next
+
+【フェーズ2進捗】
+- Step1完了: Laravel JSON API（/api/topics, /api/topics/{id}, /api/user/me）
+- Step2完了: Next.js 16.2.0 + TypeScript + Tailwind + shadcn/ui
+- Step3進行中: トピック一覧・詳細ページ完成、環境変数API_BASE_URL導入済み
+- 次のタスク: CORS設定→Vercelデプロイ→ヘッダー・ナビ追加
+
+【次のタスク詳細】
+1. LaravelにCORS設定（logos/config/cors.phpを編集）
+   Vercelドメインからのアクセスを許可する
+2. Vercelデプロイ（ブラウザで）
+   https://vercel.com にGitHubでログイン
+   logos-nextリポジトリを選択してDeploy
+   環境変数: API_BASE_URL=https://gs-f04.sakura.ne.jp
+3. 動作確認後、ヘッダー・ナビゲーション追加
+4. UIをLaravel版に近づける（Step3第2フェーズ）
+
+## UIデザイン方針
+- 参考: https://coliss.com/articles/build-websites/operation/work/logic-driven-ui-design-tips.html
+- Step3第1フェーズ: Laravel版UIを忠実にNext.jsで再現することのみ
+- Step3第2フェーズ: 動作確認後にチャットで項目を選んで改善
+- Blade版で対応済み（引き継ぐだけ）:
+  スペースの一貫性（Tailwind 8pt相当）、アバター+名前配置、コメント階層UI
+- Next.js移行時に特に意識する3点:
+  1. コントラスト比（#131314背景に対して文字色4.5:1以上）
+  2. 重要アクションの視認性（いいね・保存ボタンが隠れていない）
+  3. アイコン+テキストのペア（アイコンだけで意味が伝わるか）
+- 賛否（賛成・反対）UIは導入しない
+  理由: 2項対立でまとめられないテーマが多い、投稿をちゅうちょさせる懸念
+
+## セキュリティ
+- Gemini APIキーにNEXT_PUBLIC_をつけない（ブラウザ公開になる）
+- Next.jsからGeminiを呼ぶ場合はapp/api/ルートハンドラかLaravel API経由
