@@ -436,6 +436,19 @@ npm run dev  # または ./node_modules/.bin/next dev
   （LaravelのAPIを叩くため）
 - ./vendor/bin/sail up -d を先に実行
 
+## 認証方針（2026-03-20確定）
+- Next.js側の認証はLaravel Sanctumのトークン認証（APIトークン方式）を使う
+- 理由: LaravelにユーザーDBが集約されており、Sanctumインストール済みのため
+- NextAuth.jsは使わない（ユーザー管理の二重化を避けるため）
+- VercelとさくらがドメインをまたぐためCookieベースではなくTokenベース認証
+- トークンはlocalStorageではなくhttpOnly Cookie or メモリ管理を検討
+- 実装順: ログイン画面→トークン取得→/api/user/meで認証確認→サイドバー表示
+
+## 検証ルール（2026-03-20確定）
+- 実装完了後は必ずlocalhost:3000でブラウザ確認を行う
+- ブラウザ確認のスクショをclaude.aiチャットに送りUIレビューを受けてから次に進む
+- ビルド成功だけで完了としない
+
 # 10. 開発体制・引き継ぎルール（2026-03-20確定）
 
 ## AI役割分担（厳守）
