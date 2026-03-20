@@ -21,7 +21,7 @@ return [
 
     'allowed_origins' => [
         'http://localhost:3000',
-        'https://*.vercel.app',
+        'https://logos-next.vercel.app',
     ],
 
     'allowed_origins_patterns' => [],
