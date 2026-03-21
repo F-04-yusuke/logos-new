@@ -13,6 +13,41 @@ use Illuminate\Support\Facades\Route;
 // 公開API（認証不要）
 Route::get('/topics', [TopicApiController::class, 'index']);
 Route::get('/topics/{topic}', [TopicApiController::class, 'show']);
+
+// OGP取得プロキシ（認証不要・サーバーサイドでフェッチしてCORS回避）
+Route::get('/og', function (Request $request) {
+    $url = $request->query('url');
+    if (!$url || !filter_var($url, FILTER_VALIDATE_URL)) {
+        return response()->json(['title' => null, 'thumbnail_url' => null]);
+    }
+
+    $title         = null;
+    $thumbnail_url = null;
+
+    try {
+        $context = stream_context_create([
+            'http' => [
+                'header'  => "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36\r\n",
+                'timeout' => 5,
+            ]
+        ]);
+        $html = @file_get_contents($url, false, $context);
+        if ($html) {
+            if (preg_match('/<title[^>]*>(.*?)<\/title>/is', $html, $m)) {
+                $title = html_entity_decode($m[1]);
+            }
+            if (preg_match('/<meta property="og:title" content="(.*?)"/is', $html, $m)) {
+                $title = html_entity_decode($m[1]);
+            }
+            if (preg_match('/<meta property="og:image" content="(.*?)"/is', $html, $m)) {
+                $thumbnail_url = mb_substr(html_entity_decode($m[1]), 0, 2048);
+            }
+        }
+    } catch (\Exception $e) {}
+
+    return response()->json(['title' => $title, 'thumbnail_url' => $thumbnail_url]);
+});
+
 Route::get('/categories', fn() => response()->json(
     Category::whereNull('parent_id')->with('children')->orderBy('sort_order')->get()
 ));
@@ -136,6 +171,18 @@ Route::middleware('auth:sanctum')->group(function () {
         return response()->json(['message' => '既読にしました']);
     });
 
+    // ブックマーク（保存トピック）一覧
+    Route::get('/user/bookmarks', function (Request $request) {
+        $bookmarks = $request->user()->savedTopics()
+            ->latest('bookmarks.created_at')
+            ->limit(10)
+            ->get(['topics.id', 'topics.title']);
+
+        return response()->json(
+            $bookmarks->map(fn($t) => ['id' => $t->id, 'title' => $t->title])->values()
+        );
+    });
+
     // いいね一覧（投稿・コメント）
     Route::get('/user/likes', function (Request $request) {
         $user = $request->user();
@@ -186,13 +233,43 @@ Route::middleware('auth:sanctum')->group(function () {
             'is_published' => 'boolean',
         ]);
 
+        $isPublished   = $data['is_published'] ?? true;
+        $title         = null;
+        $thumbnail_url = null;
+
+        // 公開時のみOGP取得（下書き保存時はスキップして高速化）
+        if ($isPublished) {
+            try {
+                $context = stream_context_create([
+                    'http' => [
+                        'header'  => "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36\r\n",
+                        'timeout' => 5,
+                    ]
+                ]);
+                $html = @file_get_contents($data['url'], false, $context);
+                if ($html) {
+                    if (preg_match('/<title[^>]*>(.*?)<\/title>/is', $html, $m)) {
+                        $title = html_entity_decode($m[1]);
+                    }
+                    if (preg_match('/<meta property="og:title" content="(.*?)"/is', $html, $m)) {
+                        $title = html_entity_decode($m[1]);
+                    }
+                    if (preg_match('/<meta property="og:image" content="(.*?)"/is', $html, $m)) {
+                        $thumbnail_url = mb_substr(html_entity_decode($m[1]), 0, 2048);
+                    }
+                }
+            } catch (\Exception $e) {}
+        }
+
         $post = new \App\Models\Post();
-        $post->user_id      = $request->user()->id;
-        $post->topic_id     = $topic->id;
-        $post->url          = $data['url'];
-        $post->category     = $data['category'];
-        $post->comment      = $data['comment'] ?? null;
-        $post->is_published = $data['is_published'] ?? true;
+        $post->user_id       = $request->user()->id;
+        $post->topic_id      = $topic->id;
+        $post->url           = $data['url'];
+        $post->category      = $data['category'];
+        $post->comment       = $data['comment'] ?? null;
+        $post->title         = $title;
+        $post->thumbnail_url = $thumbnail_url;
+        $post->is_published  = $isPublished;
         $post->save();
 
         $post->load('user:id,name');
