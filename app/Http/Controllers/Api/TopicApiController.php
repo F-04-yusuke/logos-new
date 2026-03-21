@@ -24,6 +24,8 @@ class TopicApiController extends Controller
 
     public function show(Topic $topic)
     {
+        $authUser = auth('sanctum')->user();
+
         $topic->load([
             'user:id,name',
             'categories',
@@ -33,10 +35,66 @@ class TopicApiController extends Controller
                 ->withCount('likes'),
             'comments' => fn($q) => $q
                 ->whereNull('parent_id')
-                ->with(['user:id,name', 'replies.user:id,name']),
+                ->withCount('likes')
+                ->with([
+                    'user:id,name',
+                    'replies' => fn($rq) => $rq
+                        ->withCount('likes')
+                        ->with('user:id,name'),
+                ]),
         ]);
 
-        return response()->json($topic);
+        $data = $topic->toArray();
+        $data['user_has_commented'] = false;
+        $data['is_bookmarked'] = false;
+
+        if ($authUser) {
+            // 閲覧履歴を記録
+            \Illuminate\Support\Facades\DB::table('topic_views')->updateOrInsert(
+                ['user_id' => $authUser->id, 'topic_id' => $topic->id],
+                ['last_viewed_at' => now(), 'updated_at' => now()]
+            );
+
+            $data['user_has_commented'] = $topic->comments()
+                ->where('user_id', $authUser->id)
+                ->whereNull('parent_id')
+                ->exists();
+
+            $data['is_bookmarked'] = $topic->isSavedBy($authUser);
+
+            // Post likes
+            $likedPostIds = \App\Models\Like::where('user_id', $authUser->id)
+                ->whereIn('post_id', $topic->posts->pluck('id'))
+                ->pluck('post_id')
+                ->toArray();
+
+            foreach ($data['posts'] as &$post) {
+                $post['is_liked_by_me'] = in_array($post['id'], $likedPostIds);
+            }
+            unset($post);
+
+            // Comment + reply likes
+            $allCommentIds = collect($data['comments'])->pluck('id')->toArray();
+            $replyIds = collect($data['comments'])
+                ->flatMap(fn($c) => collect($c['replies'] ?? [])->pluck('id'))
+                ->toArray();
+            $likedCommentIds = \DB::table('comment_likes')
+                ->where('user_id', $authUser->id)
+                ->whereIn('comment_id', array_merge($allCommentIds, $replyIds))
+                ->pluck('comment_id')
+                ->toArray();
+
+            foreach ($data['comments'] as &$comment) {
+                $comment['is_liked_by_me'] = in_array($comment['id'], $likedCommentIds);
+                foreach ($comment['replies'] as &$reply) {
+                    $reply['is_liked_by_me'] = in_array($reply['id'], $likedCommentIds);
+                }
+                unset($reply);
+            }
+            unset($comment);
+        }
+
+        return response()->json($data);
     }
 
     public function store(Request $request)

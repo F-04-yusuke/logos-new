@@ -268,6 +268,28 @@ Route::middleware('auth:sanctum')->group(function () {
         return response()->json(['bookmarked' => $bookmarked]);
     });
 
+    // 閲覧履歴
+    Route::get('/history', function (Request $request) {
+        $user = $request->user();
+
+        $topics = $user->viewedTopics()
+            ->with('categories:id,name')
+            ->paginate(12);
+
+        $items = $topics->getCollection()->map(fn($topic) => [
+            'id'             => $topic->id,
+            'title'          => $topic->title,
+            'categories'     => $topic->categories->map(fn($c) => ['id' => $c->id, 'name' => $c->name])->values(),
+            'last_viewed_at' => $topic->pivot->last_viewed_at,
+        ]);
+
+        return response()->json([
+            'data'         => $items,
+            'current_page' => $topics->currentPage(),
+            'last_page'    => $topics->lastPage(),
+        ]);
+    });
+
     // プロフィール取得（name_updated_at付き）
     Route::get('/profile', function (Request $request) {
         $user = $request->user();
