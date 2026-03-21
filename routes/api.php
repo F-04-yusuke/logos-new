@@ -83,6 +83,83 @@ Route::middleware('auth:sanctum')->group(function () {
         return response()->json(['message' => 'ログアウトしました']);
     });
 
+    // 通知一覧
+    Route::get('/notifications', function (Request $request) {
+        $user = $request->user();
+        $notifications = Notification::where('user_id', $user->id)
+            ->with('actor:id,name,avatar')
+            ->latest()
+            ->paginate(20);
+
+        $items = collect($notifications->items())->map(function ($n) {
+            $topicId = null;
+            if ($n->notifiable_type === 'App\\Models\\Post') {
+                $topicId = \App\Models\Post::find($n->notifiable_id)?->topic_id;
+            } elseif ($n->notifiable_type === 'App\\Models\\Topic') {
+                $topicId = $n->notifiable_id;
+            } elseif ($n->notifiable_type === 'App\\Models\\Comment') {
+                $topicId = \App\Models\Comment::find($n->notifiable_id)?->topic_id;
+            }
+            return [
+                'id'         => $n->id,
+                'type'       => $n->type,
+                'text'       => $n->text,
+                'is_unread'  => $n->isUnread(),
+                'created_at' => $n->created_at,
+                'topic_id'   => $topicId,
+                'actor'      => $n->actor ? ['id' => $n->actor->id, 'name' => $n->actor->name, 'avatar' => $n->actor->avatar] : null,
+            ];
+        });
+
+        return response()->json([
+            'data'         => $items,
+            'current_page' => $notifications->currentPage(),
+            'last_page'    => $notifications->lastPage(),
+            'has_unread'   => Notification::where('user_id', $user->id)->whereNull('read_at')->exists(),
+        ]);
+    });
+
+    // 通知を全て既読
+    Route::patch('/notifications/read-all', function (Request $request) {
+        Notification::where('user_id', $request->user()->id)
+            ->whereNull('read_at')
+            ->update(['read_at' => now()]);
+        return response()->json(['message' => '既読にしました']);
+    });
+
+    // 通知を1件既読
+    Route::patch('/notifications/{notification}/read', function (Request $request, Notification $notification) {
+        if ($notification->user_id !== $request->user()->id) {
+            return response()->json(['message' => '権限がありません'], 403);
+        }
+        $notification->markAsRead();
+        return response()->json(['message' => '既読にしました']);
+    });
+
+    // いいね一覧（投稿・コメント）
+    Route::get('/user/likes', function (Request $request) {
+        $user = $request->user();
+
+        $likedPostIds = \App\Models\Like::where('user_id', $user->id)->pluck('post_id');
+        $likedPosts = \App\Models\Post::whereIn('id', $likedPostIds)
+            ->where('is_published', true)
+            ->with(['user:id,name', 'topic:id,title'])
+            ->withCount('likes')
+            ->latest()
+            ->get();
+
+        $likedComments = $user->likedComments()
+            ->with(['user:id,name', 'topic:id,title'])
+            ->withCount('likes')
+            ->latest()
+            ->get();
+
+        return response()->json([
+            'posts'    => $likedPosts,
+            'comments' => $likedComments,
+        ]);
+    });
+
     // 認証済みユーザー確認用
     Route::get('/user/me', function (Request $request) {
         $user = $request->user();
@@ -99,6 +176,158 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // トピック作成（PRO限定）
     Route::post('/topics', [TopicApiController::class, 'store']);
+
+    // エビデンス投稿
+    Route::post('/topics/{topic}/posts', function (Request $request, Topic $topic) {
+        $data = $request->validate([
+            'url'          => 'required|url|max:2048',
+            'category'     => 'required|string|in:YouTube,X,記事,知恵袋,本,その他',
+            'comment'      => 'nullable|string|max:5000',
+            'is_published' => 'boolean',
+        ]);
+
+        $post = new \App\Models\Post();
+        $post->user_id      = $request->user()->id;
+        $post->topic_id     = $topic->id;
+        $post->url          = $data['url'];
+        $post->category     = $data['category'];
+        $post->comment      = $data['comment'] ?? null;
+        $post->is_published = $data['is_published'] ?? true;
+        $post->save();
+
+        $post->load('user:id,name');
+        $post->loadCount('likes');
+
+        return response()->json($post, 201);
+    });
+
+    // コメント投稿（1人1件制限）
+    Route::post('/topics/{topic}/comments', function (Request $request, Topic $topic) {
+        $exists = $topic->comments()
+            ->where('user_id', $request->user()->id)
+            ->whereNull('parent_id')
+            ->exists();
+        if ($exists) {
+            return response()->json(['message' => 'すでにコメントを投稿済みです'], 422);
+        }
+
+        $data = $request->validate(['body' => 'required|string|max:10000']);
+
+        $comment = \App\Models\Comment::create([
+            'user_id'  => $request->user()->id,
+            'topic_id' => $topic->id,
+            'body'     => $data['body'],
+        ]);
+
+        $comment->load('user:id,name');
+        $comment->loadCount('likes');
+        $comment->setRelation('replies', collect());
+
+        return response()->json($comment, 201);
+    });
+
+    // エビデンスいいね（トグル）
+    Route::post('/posts/{post}/like', function (Request $request, \App\Models\Post $post) {
+        $user = $request->user();
+        $like = $post->likes()->where('user_id', $user->id)->first();
+        if ($like) {
+            $like->delete();
+            $liked = false;
+        } else {
+            $post->likes()->create(['user_id' => $user->id]);
+            $liked = true;
+        }
+        return response()->json(['liked' => $liked, 'likes_count' => $post->likes()->count()]);
+    });
+
+    // コメントいいね（トグル）
+    Route::post('/comments/{comment}/like', function (Request $request, \App\Models\Comment $comment) {
+        $user   = $request->user();
+        $liked  = $comment->likes()->where('user_id', $user->id)->exists();
+        if ($liked) {
+            $comment->likes()->detach($user->id);
+            $liked = false;
+        } else {
+            $comment->likes()->attach($user->id);
+            $liked = true;
+        }
+        return response()->json(['liked' => $liked, 'likes_count' => $comment->likes()->count()]);
+    });
+
+    // ブックマーク（トグル）
+    Route::post('/topics/{topic}/bookmark', function (Request $request, Topic $topic) {
+        $user        = $request->user();
+        $isBookmarked = $topic->isSavedBy($user);
+        if ($isBookmarked) {
+            \DB::table('bookmarks')->where('user_id', $user->id)->where('topic_id', $topic->id)->delete();
+            $bookmarked = false;
+        } else {
+            \DB::table('bookmarks')->insert(['user_id' => $user->id, 'topic_id' => $topic->id, 'created_at' => now(), 'updated_at' => now()]);
+            $bookmarked = true;
+        }
+        return response()->json(['bookmarked' => $bookmarked]);
+    });
+
+    // ダッシュボード
+    Route::get('/dashboard', function (Request $request) {
+        $user = $request->user();
+
+        $posts = $user->posts()
+            ->where('is_published', true)
+            ->with(['topic:id,title', 'user:id,name,avatar'])
+            ->withCount('likes')
+            ->latest()
+            ->get();
+
+        $drafts = $user->posts()
+            ->where('is_published', false)
+            ->with(['topic:id,title', 'user:id,name,avatar'])
+            ->withCount('likes')
+            ->latest()
+            ->get();
+
+        $comments = $user->comments()
+            ->whereNull('parent_id')
+            ->with([
+                'user:id,name,avatar',
+                'topic:id,title',
+                'replies' => function ($q) { $q->oldest()->with('user:id,name,avatar')->withCount('likes'); },
+            ])
+            ->withCount('likes')
+            ->latest()
+            ->get();
+
+        $topics = $user->topics()
+            ->latest()
+            ->get(['id', 'title', 'created_at']);
+
+        return response()->json([
+            'posts'       => $posts,
+            'drafts'      => $drafts,
+            'draft_count' => $drafts->count(),
+            'comments'    => $comments,
+            'analyses'    => [],
+            'topics'      => $topics,
+        ]);
+    });
+
+    // 投稿削除（自分の投稿のみ）
+    Route::delete('/posts/{post}', function (Request $request, \App\Models\Post $post) {
+        if ($post->user_id !== $request->user()->id) {
+            return response()->json(['message' => '権限がありません'], 403);
+        }
+        $post->delete();
+        return response()->json(['message' => '削除しました']);
+    });
+
+    // トピック削除（自分のトピックのみ）
+    Route::delete('/topics/{topic}', function (Request $request, Topic $topic) {
+        if ($topic->user_id !== $request->user()->id) {
+            return response()->json(['message' => '権限がありません'], 403);
+        }
+        $topic->delete();
+        return response()->json(['message' => '削除しました']);
+    });
 
     // カテゴリ管理（管理者専用）
     Route::post('/categories', function (Request $request) {
