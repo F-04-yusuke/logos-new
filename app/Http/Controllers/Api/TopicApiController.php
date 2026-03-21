@@ -7,14 +7,18 @@ use App\Http\Controllers\Controller;
 
 class TopicApiController extends Controller
 {
-    public function index()
+    public function index(\Illuminate\Http\Request $request)
     {
-        $topics = Topic::with(['user:id,name', 'categories'])
-            ->withCount(['posts', 'comments'])
-            ->latest()
-            ->paginate(20);
+        $query = Topic::with(['user:id,name', 'categories'])
+            ->withCount(['posts', 'comments']);
 
-        return response()->json($topics);
+        match ($request->query('sort')) {
+            'popular' => $query->orderByDesc('posts_count'),
+            'oldest'  => $query->oldest(),
+            default   => $query->latest(),
+        };
+
+        return response()->json($query->paginate(20));
     }
 
     public function show(Topic $topic)

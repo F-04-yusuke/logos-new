@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\TopicApiController;
+use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -8,6 +9,7 @@ use Illuminate\Support\Facades\Route;
 // 公開API（認証不要）
 Route::get('/topics', [TopicApiController::class, 'index']);
 Route::get('/topics/{topic}', [TopicApiController::class, 'show']);
+Route::get('/categories', fn() => response()->json(Category::orderBy('sort_order')->get()));
 
 // ログイン（トークン発行）
 Route::post('/login', function (Request $request) {
