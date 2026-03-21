@@ -111,5 +111,15 @@ cd ~/logos-next && npm run dev
 - サーバー上での直接ファイル作成によるgit pull競合
 
 → **Gitの履歴が調査・復元の唯一の手段となった。こまめなコミットを継続すること。**
-→ **migrate:fresh・db:wipe・sqlite切り替えは本番環境で絶対に実行しない**
+→ **migrate:fresh・db:wipe・migrate:rollback・sqlite切り替えはローカル・本番問わず絶対に実行しない。要確認**
 → **編集前にバックアップコミットを作成する**
+
+## 2026-03-21 ローカルDB障害の教訓
+ローカルの `personal_access_tokens` テーブルが消失し、ログイン不能になった:
+- **直接原因**: Sanctumのマイグレーションを `vendor:publish` + `migrate` で実行したが、生成された migration ファイルをgitにコミットしていなかった
+- **結果**: DB再構築時に `migrate` を実行してもテーブルが復元されなかった
+- **bash履歴で判明**: `migrate:fresh` は過去にPhase1開発中（ユーザー操作）で2回実行されていた。Claude Codeによる実行はなし
+- `navigation.blade.php` の `auth()->id() === 1` ハードコードが原因でadminの「カテゴリ管理」リンクが非表示になった（DBリセット後にadminのIDが変わったため）
+
+→ **マイグレーションファイルはpublish・作成直後に必ずgitコミットすること**
+→ **ローカル開発ユーザーはadmin@test.comがID=1になるよう管理すること**

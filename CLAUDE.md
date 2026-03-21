@@ -11,7 +11,8 @@
   - `app/Http/Controllers/Api/TopicApiController.php`
   - `routes/api.php`
 - 上記2ファイル編集前も必ずバックアップコミットを作成する
-- `migrate:fresh`・`db:wipe`・sqlite切り替えは本番環境で絶対に実行しない
+- `migrate:fresh`・`db:wipe`・`migrate:rollback`・`sqlite切り替え`は**ローカル・本番問わず絶対に実行しない**。実行が必要な場合は必ずユーザーに確認を取ること
+- **マイグレーションファイルは作成・publish直後に必ずgitコミットすること**（未コミットのまま放置するとDB再構築時にテーブルが復元されない）
 - サーバー上でファイルを直接編集しない（GitHub Actions経由でデプロイ）
 - 一度に編集するファイルは **5ファイル以内**
 
