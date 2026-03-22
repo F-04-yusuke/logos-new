@@ -851,10 +851,15 @@ EOT;
 
     // 分析ツール: 一件取得（編集用）
     Route::get('/analyses/{analysis}', function (Request $request, \App\Models\Analysis $analysis) {
-        if ($analysis->user_id !== $request->user()->id) {
-            return response()->json(['message' => '権限がありません'], 403);
-        }
-        return response()->json($analysis);
+        $user = $request->user();
+        $data = $analysis->toArray();
+        $data['user'] = \App\Models\User::select('id', 'name', 'avatar')->find($analysis->user_id);
+        $data['topic'] = $analysis->topic_id
+            ? \App\Models\Topic::select('id', 'title')->find($analysis->topic_id)
+            : null;
+        $data['likes_count']    = $analysis->likes()->count();
+        $data['is_liked_by_me'] = $analysis->likes()->where('user_id', $user->id)->exists();
+        return response()->json($data);
     });
 
     // 分析ツール: 新規保存
@@ -975,6 +980,28 @@ EOT;
             }
         }
         return response()->json(['liked' => $liked, 'likes_count' => $analysis->likes()->count()]);
+    });
+
+    // オリジナル図解（画像）をトピックに直接アップロード・公開（PRO限定）
+    Route::post('/topics/{topic}/analyses/image', function (Request $request, Topic $topic) {
+        $user = $request->user();
+        if (!$user->is_pro) {
+            return response()->json(['message' => 'PRO会員限定の機能です'], 403);
+        }
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+        ]);
+        $path = $request->file('image')->store('analyses', 'public');
+        $analysis = \App\Models\Analysis::create([
+            'user_id'      => $user->id,
+            'topic_id'     => $topic->id,
+            'title'        => $request->title,
+            'type'         => 'image',
+            'data'         => ['image_path' => $path],
+            'is_published' => true,
+        ]);
+        return response()->json(['message' => 'オリジナル図解を公開しました！', 'id' => $analysis->id], 201);
     });
 
     // カテゴリ管理（管理者専用）
