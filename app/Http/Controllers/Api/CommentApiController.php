@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\StoreCommentRequest;
 use App\Models\Comment;
 use App\Models\Notification;
 use App\Models\Topic;
@@ -11,7 +12,7 @@ use Illuminate\Http\Request;
 class CommentApiController extends Controller
 {
     // コメント投稿（1人1件制限）
-    public function store(Request $request, Topic $topic)
+    public function store(StoreCommentRequest $request, Topic $topic)
     {
         $exists = $topic->comments()
             ->where('user_id', $request->user()->id)
@@ -21,7 +22,7 @@ class CommentApiController extends Controller
             return response()->json(['message' => 'すでにコメントを投稿済みです'], 422);
         }
 
-        $data = $request->validate(['body' => 'required|string|max:10000']);
+        $data = $request->validated();
 
         $comment = Comment::create([
             'user_id'  => $request->user()->id,
@@ -37,10 +38,10 @@ class CommentApiController extends Controller
     }
 
     // コメント返信投稿（制限付き: 投稿主5件・他1件）
-    public function reply(Request $request, Comment $comment)
+    public function reply(StoreCommentRequest $request, Comment $comment)
     {
         $user = $request->user();
-        $data = $request->validate(['body' => 'required|string|max:10000']);
+        $data = $request->validated();
 
         $myRepliesCount = Comment::where('parent_id', $comment->id)
             ->where('user_id', $user->id)
