@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Notification;
 use App\Models\Post;
 use App\Models\Topic;
+use App\Services\OgpService;
 use Illuminate\Http\Request;
 
 class PostApiController extends Controller
@@ -26,26 +27,7 @@ class PostApiController extends Controller
 
         // 公開時のみOGP取得（下書き保存時はスキップして高速化）
         if ($isPublished) {
-            try {
-                $context = stream_context_create([
-                    'http' => [
-                        'header'  => "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36\r\n",
-                        'timeout' => 5,
-                    ]
-                ]);
-                $html = @file_get_contents($data['url'], false, $context);
-                if ($html) {
-                    if (preg_match('/<title[^>]*>(.*?)<\/title>/is', $html, $m)) {
-                        $title = html_entity_decode($m[1]);
-                    }
-                    if (preg_match('/<meta property="og:title" content="(.*?)"/is', $html, $m)) {
-                        $title = html_entity_decode($m[1]);
-                    }
-                    if (preg_match('/<meta property="og:image" content="(.*?)"/is', $html, $m)) {
-                        $thumbnail_url = mb_substr(html_entity_decode($m[1]), 0, 2048);
-                    }
-                }
-            } catch (\Exception $e) {}
+            ['title' => $title, 'thumbnail_url' => $thumbnail_url] = OgpService::fetch($data['url']);
         }
 
         $post = new Post();
@@ -127,23 +109,7 @@ class PostApiController extends Controller
 
         // 本投稿（is_published = true）に切り替わる瞬間だけ OGP を取得する
         if ($validated['is_published'] && !$post->is_published) {
-            try {
-                $context = stream_context_create([
-                    'http' => ['header' => "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36\r\n"]
-                ]);
-                $html = @file_get_contents($validated['url'], false, $context);
-                if ($html) {
-                    if (preg_match('/<title[^>]*>(.*?)<\/title>/is', $html, $matches)) {
-                        $title = html_entity_decode($matches[1]);
-                    }
-                    if (preg_match('/<meta property="og:title" content="(.*?)"/is', $html, $matches)) {
-                        $title = html_entity_decode($matches[1]);
-                    }
-                    if (preg_match('/<meta property="og:image" content="(.*?)"/is', $html, $matches)) {
-                        $thumbnail_url = mb_substr(html_entity_decode($matches[1]), 0, 2048);
-                    }
-                }
-            } catch (\Exception $e) {}
+            ['title' => $title, 'thumbnail_url' => $thumbnail_url] = OgpService::fetch($validated['url']);
 
             // 本投稿時のみ通知を送信（トピック作成者へ）
             $topic = $post->topic;

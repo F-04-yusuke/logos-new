@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AnalysisApiController;
+use App\Services\OgpService;
 use App\Http\Controllers\Api\CategoryApiController;
 use App\Http\Controllers\Api\CommentApiController;
 use App\Http\Controllers\Api\DashboardApiController;
@@ -27,32 +28,7 @@ Route::get('/og', function (Request $request) {
     if (!$url || !filter_var($url, FILTER_VALIDATE_URL)) {
         return response()->json(['title' => null, 'thumbnail_url' => null]);
     }
-
-    $title         = null;
-    $thumbnail_url = null;
-
-    try {
-        $context = stream_context_create([
-            'http' => [
-                'header'  => "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36\r\n",
-                'timeout' => 5,
-            ]
-        ]);
-        $html = @file_get_contents($url, false, $context);
-        if ($html) {
-            if (preg_match('/<title[^>]*>(.*?)<\/title>/is', $html, $m)) {
-                $title = html_entity_decode($m[1]);
-            }
-            if (preg_match('/<meta property="og:title" content="(.*?)"/is', $html, $m)) {
-                $title = html_entity_decode($m[1]);
-            }
-            if (preg_match('/<meta property="og:image" content="(.*?)"/is', $html, $m)) {
-                $thumbnail_url = mb_substr(html_entity_decode($m[1]), 0, 2048);
-            }
-        }
-    } catch (\Exception $e) {}
-
-    return response()->json(['title' => $title, 'thumbnail_url' => $thumbnail_url]);
+    return response()->json(OgpService::fetch($url));
 });
 
 Route::get('/categories', fn() => response()->json(
