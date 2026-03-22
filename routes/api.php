@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\NotificationApiController;
 use App\Http\Controllers\Api\ProfileApiController;
 use App\Http\Controllers\Api\TopicApiController;
+use App\Http\Controllers\Api\UserApiController;
 use App\Models\Category;
 use App\Models\Notification;
 use App\Models\Topic;
@@ -125,55 +126,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/notifications/read-all', [NotificationApiController::class, 'readAll']);
     Route::patch('/notifications/{notification}/read', [NotificationApiController::class, 'read']);
 
-    // ブックマーク（保存トピック）一覧
-    Route::get('/user/bookmarks', function (Request $request) {
-        $bookmarks = $request->user()->savedTopics()
-            ->latest('bookmarks.created_at')
-            ->limit(10)
-            ->get(['topics.id', 'topics.title']);
-
-        return response()->json(
-            $bookmarks->map(fn($t) => ['id' => $t->id, 'title' => $t->title])->values()
-        );
-    });
-
-    // いいね一覧（投稿・コメント）
-    Route::get('/user/likes', function (Request $request) {
-        $user = $request->user();
-
-        $likedPostIds = \App\Models\Like::where('user_id', $user->id)->pluck('post_id');
-        $likedPosts = \App\Models\Post::whereIn('id', $likedPostIds)
-            ->where('is_published', true)
-            ->with(['user:id,name', 'topic:id,title'])
-            ->withCount('likes')
-            ->latest()
-            ->get();
-
-        $likedComments = $user->likedComments()
-            ->with(['user:id,name', 'topic:id,title'])
-            ->withCount('likes')
-            ->latest()
-            ->get();
-
-        return response()->json([
-            'posts'    => $likedPosts,
-            'comments' => $likedComments,
-        ]);
-    });
-
-    // 認証済みユーザー確認用
-    Route::get('/user/me', function (Request $request) {
-        $user = $request->user();
-        return response()->json([
-            'id'                        => $user->id,
-            'name'                      => $user->name,
-            'email'                     => $user->email,
-            'avatar'                    => $user->avatar ?? null,
-            'is_pro'                    => $user->is_pro,
-            'is_admin'                  => $user->is_admin,
-            'unread_notifications_count' => Notification::where('user_id', $user->id)->whereNull('read_at')->count(),
-        ]);
-    });
+    // ユーザー情報
+    Route::get('/user/me', [UserApiController::class, 'me']);
+    Route::get('/user/bookmarks', [UserApiController::class, 'bookmarks']);
+    Route::get('/user/likes', [UserApiController::class, 'likes']);
 
     // トピック作成（PRO限定）
     Route::post('/topics', [TopicApiController::class, 'store']);
@@ -546,26 +502,7 @@ EOT;
     });
 
     // 閲覧履歴
-    Route::get('/history', function (Request $request) {
-        $user = $request->user();
-
-        $topics = $user->viewedTopics()
-            ->with('categories:id,name')
-            ->paginate(12);
-
-        $items = $topics->getCollection()->map(fn($topic) => [
-            'id'             => $topic->id,
-            'title'          => $topic->title,
-            'categories'     => $topic->categories->map(fn($c) => ['id' => $c->id, 'name' => $c->name])->values(),
-            'last_viewed_at' => $topic->pivot->last_viewed_at,
-        ]);
-
-        return response()->json([
-            'data'         => $items,
-            'current_page' => $topics->currentPage(),
-            'last_page'    => $topics->lastPage(),
-        ]);
-    });
+    Route::get('/history', [UserApiController::class, 'history']);
 
     // プロフィール
     Route::get('/profile', [ProfileApiController::class, 'show']);
