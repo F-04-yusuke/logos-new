@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\StoreTopicRequest;
+use App\Http\Requests\Api\UpdateTopicRequest;
 use App\Models\Notification;
 use App\Models\Topic;
-use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -119,23 +121,14 @@ class TopicApiController extends Controller
         return response()->json($data);
     }
 
-    public function update(Request $request, Topic $topic)
+    public function update(UpdateTopicRequest $request, Topic $topic)
     {
         // 作成者チェック
         if ($topic->user_id !== $request->user()->id) {
             return response()->json(['message' => '編集権限がありません'], 403);
         }
 
-        $validated = $request->validate([
-            'title'            => 'required|string|max:255',
-            'content'          => 'required|string|max:20000',
-            'category_ids'     => 'required|array|min:1|max:2',
-            'category_ids.*'   => 'integer|exists:categories,id',
-            'timeline'         => 'nullable|array',
-            'timeline.*.date'  => 'nullable|string|max:50',
-            'timeline.*.event' => 'nullable|string|max:500',
-            'timeline.*.is_ai' => 'nullable|boolean',
-        ]);
+        $validated = $request->validated();
 
         $topic->update([
             'title'    => $validated['title'],
@@ -148,23 +141,14 @@ class TopicApiController extends Controller
         return response()->json($topic->load(['user:id,name', 'categories']));
     }
 
-    public function store(Request $request)
+    public function store(StoreTopicRequest $request)
     {
         // PROチェック
         if (!$request->user()->is_pro) {
             return response()->json(['message' => 'PRO会員のみトピックを作成できます'], 403);
         }
 
-        $validated = $request->validate([
-            'title'            => 'required|string|max:255',
-            'content'          => 'required|string|max:20000',
-            'category_ids'     => 'required|array|min:1|max:2',
-            'category_ids.*'   => 'integer|exists:categories,id',
-            'timeline'         => 'nullable|array',
-            'timeline.*.date'  => 'nullable|string|max:255',
-            'timeline.*.event' => 'nullable|string|max:1000',
-            'timeline.*.is_ai' => 'nullable|boolean',
-        ]);
+        $validated = $request->validated();
 
         $topic = Topic::create([
             'user_id'  => $request->user()->id,
