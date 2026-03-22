@@ -23,7 +23,7 @@
 - インフラ: さくらのレンタルサーバー + GitHub Actionsで低コストかつモダンな開発体験を実現
 - ※重要: DBはMySQLで完結。Supabase等のBaaSは絶対に使用しない。VercelはNext.js専用。
 
-### フェーズ2：フロントエンドのモダン化（進行中）
+### フェーズ2：フロントエンドのモダン化（**完了** 2026-03-22）
 - **ゴール**: Next.js + LaravelのAPI構成でWebが動くこと
 - コンポーネント分割: 現在Bladeで書いているUIを小さな部品に分け、React / Next.js に移行しやすい設計に整理する
 - API化: LaravelをデータだけをAPIとして返す構成にし、Next.jsと通信するSPA構成にする
@@ -37,7 +37,7 @@
 - **Step3進行中**: 画面移行（一覧・詳細・ヘッダー・サイドバー・ログイン実装済み）
 - **Step4完了**: 認証実装（Sanctumトークン・login/logout API）
 
-### フェーズ3：集客・マーケティング基盤（未着手）
+### フェーズ3：集客・マーケティング基盤（**着手中** 2026-03-22〜）
 - SEO対策: 適切なHTMLタグ（h1, h2）の使用、メタデータ（OGP設定）
 - 表示速度の最適化: 画像の圧縮、不要なコードの削減、Nginxやキャッシュの導入
 - LP作成: LOGOSの魅力（レスバではなく議論、AIサポートなど）を伝える登録用ページ
@@ -112,7 +112,7 @@
     ↓
 [Vercel] logos-next（Next.js 16.2.0）
     ↓ API（HTTPS）
-[さくらレンタルサーバー] logos-new（Laravel 12.x）
+[さくらレンタルサーバー] logos-laravel（Laravel 12.x）
     ↓
 [MySQL 8.0] mysql3113.db.sakura.ne.jp / gs-f04_logos
 ```
