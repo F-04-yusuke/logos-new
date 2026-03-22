@@ -55,4 +55,10 @@ class Topic extends Model
     {
         return $this->hasMany(Comment::class);
     }
+
+    // このトピックに紐づく分析ツール投稿を取得する
+    public function analyses()
+    {
+        return $this->hasMany(Analysis::class);
+    }
 }

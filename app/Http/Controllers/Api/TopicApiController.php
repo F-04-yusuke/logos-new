@@ -42,17 +42,14 @@ class TopicApiController extends Controller
                         ->withCount('likes')
                         ->with('user:id,name'),
                 ]),
+            'analyses' => fn($q) => $q
+                ->where('is_published', true)
+                ->with('user:id,name,avatar')
+                ->withCount('likes')
+                ->latest(),
         ]);
 
         $data = $topic->toArray();
-
-        $analyses = \App\Models\Analysis::where('topic_id', $topic->id)
-            ->where('is_published', true)
-            ->with('user:id,name,avatar')
-            ->withCount('likes')
-            ->latest()
-            ->get();
-        $data['analyses'] = $analyses->toArray();
         $data['user_has_commented'] = false;
         $data['is_bookmarked'] = false;
 
