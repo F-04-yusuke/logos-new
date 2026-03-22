@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\CommentApiController;
 use App\Http\Controllers\Api\DashboardApiController;
 use App\Http\Controllers\Api\NotificationApiController;
 use App\Http\Controllers\Api\ProfileApiController;
@@ -193,29 +194,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // コメント投稿（1人1件制限）
-    Route::post('/topics/{topic}/comments', function (Request $request, Topic $topic) {
-        $exists = $topic->comments()
-            ->where('user_id', $request->user()->id)
-            ->whereNull('parent_id')
-            ->exists();
-        if ($exists) {
-            return response()->json(['message' => 'すでにコメントを投稿済みです'], 422);
-        }
-
-        $data = $request->validate(['body' => 'required|string|max:10000']);
-
-        $comment = \App\Models\Comment::create([
-            'user_id'  => $request->user()->id,
-            'topic_id' => $topic->id,
-            'body'     => $data['body'],
-        ]);
-
-        $comment->load('user:id,name');
-        $comment->loadCount('likes');
-        $comment->setRelation('replies', collect());
-
-        return response()->json($comment, 201);
-    });
+    Route::post('/topics/{topic}/comments', [CommentApiController::class, 'store']);
 
     // エビデンスいいね（トグル）
     Route::post('/posts/{post}/like', function (Request $request, \App\Models\Post $post) {
@@ -241,57 +220,9 @@ Route::middleware('auth:sanctum')->group(function () {
         return response()->json(['liked' => $liked, 'likes_count' => $post->likes()->count()]);
     });
 
-    // コメント返信投稿（制限付き: 投稿主5件・他1件）
-    Route::post('/comments/{comment}/reply', function (Request $request, \App\Models\Comment $comment) {
-        $user = $request->user();
-        $data = $request->validate(['body' => 'required|string|max:10000']);
-
-        $myRepliesCount = \App\Models\Comment::where('parent_id', $comment->id)
-            ->where('user_id', $user->id)
-            ->count();
-
-        if ($comment->user_id === $user->id) {
-            if ($myRepliesCount >= 5) {
-                return response()->json(['message' => '補足は最大5件までです'], 422);
-            }
-        } else {
-            if ($myRepliesCount >= 1) {
-                return response()->json(['message' => 'このコメントへの返信は1件のみ可能です'], 422);
-            }
-        }
-
-        $reply = \App\Models\Comment::create([
-            'user_id'   => $user->id,
-            'topic_id'  => $comment->topic_id,
-            'parent_id' => $comment->id,
-            'body'      => $data['body'],
-        ]);
-
-        // 通知：返信先コメントの作成者が別ユーザーの場合のみ
-        if ($comment->user_id !== $user->id) {
-            Notification::create([
-                'user_id'         => $comment->user_id,
-                'actor_id'        => $user->id,
-                'type'            => 'comment_reply',
-                'notifiable_type' => 'App\\Models\\Comment',
-                'notifiable_id'   => $comment->id,
-            ]);
-        }
-
-        $reply->load('user:id,name,avatar');
-        $reply->loadCount('likes');
-
-        return response()->json($reply, 201);
-    });
-
-    // コメント削除（自分のコメント・返信のみ）
-    Route::delete('/comments/{comment}', function (Request $request, \App\Models\Comment $comment) {
-        if ($comment->user_id !== $request->user()->id) {
-            return response()->json(['message' => '権限がありません'], 403);
-        }
-        $comment->delete();
-        return response()->json(['message' => '削除しました']);
-    });
+    // コメント返信・削除
+    Route::post('/comments/{comment}/reply', [CommentApiController::class, 'reply']);
+    Route::delete('/comments/{comment}', [CommentApiController::class, 'destroy']);
 
     // 投稿補足（投稿者本人・1回のみ）
     Route::post('/posts/{post}/supplement', function (Request $request, \App\Models\Post $post) {
@@ -321,29 +252,8 @@ Route::middleware('auth:sanctum')->group(function () {
         return response()->json(['supplement' => $analysis->supplement]);
     });
 
-    // コメントいいね（トグル）
-    Route::post('/comments/{comment}/like', function (Request $request, \App\Models\Comment $comment) {
-        $user   = $request->user();
-        $liked  = $comment->likes()->where('user_id', $user->id)->exists();
-        if ($liked) {
-            $comment->likes()->detach($user->id);
-            $liked = false;
-        } else {
-            $comment->likes()->attach($user->id);
-            $liked = true;
-            // 通知：コメント作成者が別ユーザーの場合のみ
-            if ($comment->user_id !== $user->id) {
-                Notification::create([
-                    'user_id'         => $comment->user_id,
-                    'actor_id'        => $user->id,
-                    'type'            => 'comment_like',
-                    'notifiable_type' => 'App\\Models\\Comment',
-                    'notifiable_id'   => $comment->id,
-                ]);
-            }
-        }
-        return response()->json(['liked' => $liked, 'likes_count' => $comment->likes()->count()]);
-    });
+    // コメントいいね
+    Route::post('/comments/{comment}/like', [CommentApiController::class, 'like']);
 
     // 時系列: AIで自動生成（トピック作成者限定・未生成の場合のみ）
     Route::post('/topics/{topic}/timeline/generate', function (Request $request, Topic $topic) {
