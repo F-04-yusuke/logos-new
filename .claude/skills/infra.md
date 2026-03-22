@@ -90,7 +90,7 @@ cd ~/logos-next && npm run dev
 注意: `php` 単体コマンドはWSL上では使えない（command not found になる）
 
 ### Next.js使用時の起動順
-1. `cd ~/logos && ./vendor/bin/sail up -d` ← LaravelのAPIを叩くため必須
+1. `cd ~/logos-laravel && ./vendor/bin/sail up -d` ← LaravelのAPIを叩くため必須
 2. `cd ~/logos-next && npm run dev`
 3. http://localhost:3000 で確認
 
