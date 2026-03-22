@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\AiAssistRequest;
+use App\Http\Requests\Api\PublishAnalysisRequest;
+use App\Http\Requests\Api\StoreAnalysisImageRequest;
 use App\Http\Requests\Api\StoreAnalysisRequest;
 use App\Http\Requests\Api\SupplementRequest;
 use App\Http\Requests\Api\UpdateAnalysisRequest;
@@ -70,12 +73,12 @@ class AnalysisApiController extends Controller
     }
 
     // 分析をトピックに公開
-    public function publish(Request $request, Analysis $analysis)
+    public function publish(PublishAnalysisRequest $request, Analysis $analysis)
     {
         if ($analysis->user_id !== $request->user()->id) {
             return response()->json(['message' => '権限がありません'], 403);
         }
-        $data = $request->validate(['topic_id' => 'required|integer|exists:topics,id']);
+        $data = $request->validated();
         $analysis->update(['topic_id' => $data['topic_id'], 'is_published' => true]);
         return response()->json(['message' => '公開しました']);
     }
@@ -130,16 +133,12 @@ class AnalysisApiController extends Controller
     }
 
     // オリジナル図解（画像）をトピックに直接アップロード・公開（PRO限定）
-    public function storeImage(Request $request, Topic $topic)
+    public function storeImage(StoreAnalysisImageRequest $request, Topic $topic)
     {
         $user = $request->user();
         if (!$user->is_pro) {
             return response()->json(['message' => 'PRO会員限定の機能です'], 403);
         }
-        $request->validate([
-            'title' => 'required|string|max:255',
-            'image' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
-        ]);
         $path = $request->file('image')->store('analyses', 'public');
         $analysis = Analysis::create([
             'user_id'      => $user->id,
@@ -153,12 +152,8 @@ class AnalysisApiController extends Controller
     }
 
     // AIアシスタント (Gemini)
-    public function aiAssist(Request $request)
+    public function aiAssist(AiAssistRequest $request)
     {
-        $request->validate([
-            'prompt'  => 'required|string|max:5000',
-            'context' => 'nullable|string|max:10000',
-        ]);
 
         $apiKey = config('services.gemini.api_key');
         if (!$apiKey) {
