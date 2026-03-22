@@ -1,4 +1,4 @@
-# LOGOS Laravel版 仕様書（logos-new）
+# LOGOS Laravel版 仕様書（logos-laravel）
 最終更新: 2026-03-21
 
 ---
@@ -6,11 +6,8 @@
 # 0. 最重要ルール
 
 ## このリポジトリの役割
-- **さくら本番稼働中。絶対に壊さない。**
-- Claude Codeは原則読み取り専用。**以下2ファイルのみ編集可**:
-  - `app/Http/Controllers/Api/TopicApiController.php`
-  - `routes/api.php`
-- 上記2ファイル編集前も必ずバックアップコミットを作成する
+- **さくら本番稼働中。編集後はさくらへの影響に注意してコミットすること。**
+- Claude Codeも含め**全ファイル自由に編集可**
 - `migrate:fresh`・`db:wipe`・`migrate:rollback`・`sqlite切り替え`は**ローカル・本番問わず絶対に実行しない**。実行が必要な場合は必ずユーザーに確認を取ること
 - **マイグレーションファイルは作成・publish直後に必ずgitコミットすること**（未コミットのまま放置するとDB再構築時にテーブルが復元されない）
 - サーバー上でファイルを直接編集しない（GitHub Actions経由でデプロイ）
@@ -30,7 +27,7 @@ LOGOSは感情的な論争を防ぎ、エビデンスに基づいた俯瞰的・
 - バックエンド: Laravel 12.x + Sanctum + MySQL（さくらレンタルサーバー）
 - フロントエンド: Next.js 16.2.0（~/logos-next → Vercel）
 - 本番URL: https://gs-f04.sakura.ne.jp
-- GitHubリポジトリ: https://github.com/F-04-yusuke/logos-new
+- GitHubリポジトリ: https://github.com/F-04-yusuke/logos-laravel
 - adminユーザー: admin@test.com（is_pro・is_admin設定済み）
 
 ---
@@ -56,7 +53,7 @@ LOGOSは感情的な論争を防ぎ、エビデンスに基づいた俯瞰的・
 
 | 役割 | 担当 |
 |---|---|
-| コード読み取り・API追加（上記2ファイルのみ）・技術検証 | Claude Code |
+| コード実装・ファイル編集・git操作・技術的検証 | Claude Code |
 | ブラウザで判断が必要な視覚的レビュー（スクショ・UIデザイン確認） | AIチャット（claude.ai） |
 | ブラウザ確認・スクショ撮影 | ユーザー |
 
