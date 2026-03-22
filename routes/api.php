@@ -239,6 +239,9 @@ Route::middleware('auth:sanctum')->group(function () {
     // トピック作成（PRO限定）
     Route::post('/topics', [TopicApiController::class, 'store']);
 
+    // トピック編集（作成者限定）
+    Route::put('/topics/{topic}', [TopicApiController::class, 'update']);
+
     // エビデンス投稿
     Route::post('/topics/{topic}/posts', function (Request $request, Topic $topic) {
         $data = $request->validate([
@@ -762,6 +765,70 @@ EOT;
             'analyses'    => $analyses,
             'topics'      => $topics,
         ]);
+    });
+
+    // 下書き編集（自分の下書きのみ・公開済みは403）
+    Route::patch('/posts/{post}', function (Request $request, \App\Models\Post $post) {
+        if ($post->user_id !== $request->user()->id) {
+            return response()->json(['message' => '権限がありません'], 403);
+        }
+        if ($post->is_published) {
+            return response()->json(['message' => '公開済みのエビデンスは編集できません'], 403);
+        }
+
+        $validated = $request->validate([
+            'url'          => 'required|url|max:2048',
+            'category'     => 'required|string|max:255',
+            'comment'      => 'nullable|string|max:2000',
+            'is_published' => 'required|boolean',
+        ]);
+
+        $title         = $post->title;
+        $thumbnail_url = $post->thumbnail_url;
+
+        // 本投稿（is_published = true）に切り替わる瞬間だけ OGP を取得する
+        if ($validated['is_published'] && !$post->is_published) {
+            try {
+                $context = stream_context_create([
+                    'http' => ['header' => "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36\r\n"]
+                ]);
+                $html = @file_get_contents($validated['url'], false, $context);
+                if ($html) {
+                    if (preg_match('/<title[^>]*>(.*?)<\/title>/is', $html, $matches)) {
+                        $title = html_entity_decode($matches[1]);
+                    }
+                    if (preg_match('/<meta property="og:title" content="(.*?)"/is', $html, $matches)) {
+                        $title = html_entity_decode($matches[1]);
+                    }
+                    if (preg_match('/<meta property="og:image" content="(.*?)"/is', $html, $matches)) {
+                        $thumbnail_url = mb_substr(html_entity_decode($matches[1]), 0, 2048);
+                    }
+                }
+            } catch (\Exception $e) {}
+
+            // 本投稿時のみ通知を送信（トピック作成者へ）
+            $topic = $post->topic;
+            if ($topic && $topic->user_id !== $request->user()->id) {
+                \App\Models\Notification::create([
+                    'user_id'         => $topic->user_id,
+                    'actor_id'        => $request->user()->id,
+                    'type'            => 'new_post',
+                    'notifiable_type' => 'topic',
+                    'notifiable_id'   => $topic->id,
+                ]);
+            }
+        }
+
+        $post->update([
+            'url'           => $validated['url'],
+            'category'      => $validated['category'],
+            'comment'       => $validated['comment'] ?? null,
+            'is_published'  => $validated['is_published'],
+            'title'         => $title,
+            'thumbnail_url' => $thumbnail_url,
+        ]);
+
+        return response()->json($post->fresh());
     });
 
     // 投稿削除（自分の投稿のみ）

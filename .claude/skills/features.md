@@ -51,7 +51,7 @@ LOGOSは「質の高い議論」を目的とするため、以下の制限を設
 - `HistoryController.php` — 閲覧履歴
 - `LikeController.php` — エビデンスいいね・一覧
 - `NotificationController.php` — 通知 一覧・既読管理
-- `PostController.php` — エビデンス 投稿・削除（編集ルートは仕様上廃止予定）
+- `PostController.php` — エビデンス 投稿・削除・下書き編集（edit/update）。Next.js向けには `routes/api.php` に `PATCH /api/posts/{post}` を追加済み（下書きのみ・本投稿昇格時OGP取得・通知送信）
 - `ProfileController.php` — プロフィール設定
 - `SupplementController.php` — 補足（Post/Analysis への返信）
 - `TopicController.php` — トピック CRUD・AI時系列生成

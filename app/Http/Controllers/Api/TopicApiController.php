@@ -119,6 +119,35 @@ class TopicApiController extends Controller
         return response()->json($data);
     }
 
+    public function update(Request $request, Topic $topic)
+    {
+        // 作成者チェック
+        if ($topic->user_id !== $request->user()->id) {
+            return response()->json(['message' => '編集権限がありません'], 403);
+        }
+
+        $validated = $request->validate([
+            'title'            => 'required|string|max:255',
+            'content'          => 'required|string|max:20000',
+            'category_ids'     => 'required|array|min:1|max:2',
+            'category_ids.*'   => 'integer|exists:categories,id',
+            'timeline'         => 'nullable|array',
+            'timeline.*.date'  => 'nullable|string|max:50',
+            'timeline.*.event' => 'nullable|string|max:500',
+            'timeline.*.is_ai' => 'nullable|boolean',
+        ]);
+
+        $topic->update([
+            'title'    => $validated['title'],
+            'content'  => $validated['content'],
+            'timeline' => $validated['timeline'] ?? null,
+        ]);
+
+        $topic->categories()->sync($validated['category_ids']);
+
+        return response()->json($topic->load(['user:id,name', 'categories']));
+    }
+
     public function store(Request $request)
     {
         // PROチェック
