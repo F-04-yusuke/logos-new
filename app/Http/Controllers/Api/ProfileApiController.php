@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\DestroyProfileRequest;
+use App\Http\Requests\Api\UpdatePasswordRequest;
+use App\Http\Requests\Api\UpdateProfileRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -24,22 +27,14 @@ class ProfileApiController extends Controller
     }
 
     // プロフィール更新（multipart/form-data）
-    public function update(Request $request)
+    public function update(UpdateProfileRequest $request)
     {
         $user = $request->user();
 
         $canChangeName = !$user->name_updated_at ||
             \Carbon\Carbon::parse($user->name_updated_at)->addDays(7)->isPast();
 
-        $rules = [
-            'email'  => 'required|email|max:255|unique:users,email,' . $user->id,
-            'avatar' => 'nullable|image|max:2048',
-        ];
-        if ($canChangeName) {
-            $rules['name'] = 'required|string|max:255';
-        }
-
-        $data = $request->validate($rules);
+        $data = $request->validated();
 
         if ($request->hasFile('avatar')) {
             $path = $request->file('avatar')->store('avatars', 'public');
@@ -68,12 +63,9 @@ class ProfileApiController extends Controller
     }
 
     // パスワード更新
-    public function updatePassword(Request $request)
+    public function updatePassword(UpdatePasswordRequest $request)
     {
-        $data = $request->validate([
-            'current_password' => 'required|string',
-            'password'         => 'required|string|min:8|confirmed',
-        ]);
+        $data = $request->validated();
 
         $user = $request->user();
 
@@ -88,9 +80,9 @@ class ProfileApiController extends Controller
     }
 
     // アカウント削除
-    public function destroy(Request $request)
+    public function destroy(DestroyProfileRequest $request)
     {
-        $data = $request->validate(['password' => 'required|string']);
+        $data = $request->validated();
 
         $user = $request->user();
 
