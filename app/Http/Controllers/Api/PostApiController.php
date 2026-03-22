@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\StorePostRequest;
+use App\Http\Requests\Api\SupplementRequest;
+use App\Http\Requests\Api\UpdatePostRequest;
 use App\Models\Notification;
 use App\Models\Post;
 use App\Models\Topic;
@@ -12,14 +15,9 @@ use Illuminate\Http\Request;
 class PostApiController extends Controller
 {
     // エビデンス投稿
-    public function store(Request $request, Topic $topic)
+    public function store(StorePostRequest $request, Topic $topic)
     {
-        $data = $request->validate([
-            'url'          => 'required|url|max:2048',
-            'category'     => 'required|string|in:YouTube,X,記事,知恵袋,本,その他',
-            'comment'      => 'nullable|string|max:5000',
-            'is_published' => 'boolean',
-        ]);
+        $data = $request->validated();
 
         $isPublished   = $data['is_published'] ?? true;
         $title         = null;
@@ -73,7 +71,7 @@ class PostApiController extends Controller
     }
 
     // 投稿補足（投稿者本人・1回のみ）
-    public function supplement(Request $request, Post $post)
+    public function supplement(SupplementRequest $request, Post $post)
     {
         if ($post->user_id !== $request->user()->id) {
             return response()->json(['message' => '権限がありません'], 403);
@@ -81,14 +79,14 @@ class PostApiController extends Controller
         if ($post->supplement !== null) {
             return response()->json(['message' => '補足はすでに追加済みです'], 422);
         }
-        $data = $request->validate(['supplement' => 'required|string|max:5000']);
+        $data = $request->validated();
         $post->supplement = $data['supplement'];
         $post->save();
         return response()->json(['supplement' => $post->supplement]);
     }
 
     // 下書き編集（自分の下書きのみ・公開済みは403）
-    public function update(Request $request, Post $post)
+    public function update(UpdatePostRequest $request, Post $post)
     {
         if ($post->user_id !== $request->user()->id) {
             return response()->json(['message' => '権限がありません'], 403);
@@ -97,12 +95,7 @@ class PostApiController extends Controller
             return response()->json(['message' => '公開済みのエビデンスは編集できません'], 403);
         }
 
-        $validated = $request->validate([
-            'url'          => 'required|url|max:2048',
-            'category'     => 'required|string|max:255',
-            'comment'      => 'nullable|string|max:2000',
-            'is_published' => 'required|boolean',
-        ]);
+        $validated = $request->validated();
 
         $title         = $post->title;
         $thumbnail_url = $post->thumbnail_url;
