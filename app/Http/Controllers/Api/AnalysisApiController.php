@@ -3,6 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\StoreAnalysisRequest;
+use App\Http\Requests\Api\SupplementRequest;
+use App\Http\Requests\Api\UpdateAnalysisRequest;
 use App\Models\Analysis;
 use App\Models\Notification;
 use App\Models\Topic;
@@ -25,17 +28,13 @@ class AnalysisApiController extends Controller
     }
 
     // 分析ツール: 新規保存（PRO限定）
-    public function store(Request $request)
+    public function store(StoreAnalysisRequest $request)
     {
         $user = $request->user();
         if (!$user->is_pro) {
             return response()->json(['message' => 'PRO会員限定の機能です'], 403);
         }
-        $data = $request->validate([
-            'title' => 'required|string|max:255',
-            'type'  => 'required|string|in:tree,matrix,swot',
-            'data'  => 'required|array',
-        ]);
+        $data = $request->validated();
         $analysis = Analysis::create([
             'user_id'      => $user->id,
             'title'        => $data['title'],
@@ -47,15 +46,12 @@ class AnalysisApiController extends Controller
     }
 
     // 分析ツール: 上書き保存
-    public function update(Request $request, Analysis $analysis)
+    public function update(UpdateAnalysisRequest $request, Analysis $analysis)
     {
         if ($analysis->user_id !== $request->user()->id) {
             return response()->json(['message' => '権限がありません'], 403);
         }
-        $data = $request->validate([
-            'title' => 'nullable|string|max:255',
-            'data'  => 'required|array',
-        ]);
+        $data = $request->validated();
         $analysis->update([
             'title' => $data['title'] ?? $analysis->title,
             'data'  => $data['data'],
@@ -109,7 +105,7 @@ class AnalysisApiController extends Controller
     }
 
     // 分析補足（投稿者本人・1回のみ）
-    public function supplement(Request $request, Analysis $analysis)
+    public function supplement(SupplementRequest $request, Analysis $analysis)
     {
         if ($analysis->user_id !== $request->user()->id) {
             return response()->json(['message' => '権限がありません'], 403);
@@ -117,7 +113,7 @@ class AnalysisApiController extends Controller
         if ($analysis->supplement !== null) {
             return response()->json(['message' => '補足はすでに追加済みです'], 422);
         }
-        $data = $request->validate(['supplement' => 'required|string|max:5000']);
+        $data = $request->validated();
         $analysis->supplement = $data['supplement'];
         $analysis->save();
         return response()->json(['supplement' => $analysis->supplement]);
