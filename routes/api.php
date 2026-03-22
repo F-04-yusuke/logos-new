@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AnalysisApiController;
+use App\Http\Controllers\Api\CategoryApiController;
 use App\Http\Controllers\Api\CommentApiController;
 use App\Http\Controllers\Api\DashboardApiController;
 use App\Http\Controllers\Api\NotificationApiController;
@@ -10,7 +11,6 @@ use App\Http\Controllers\Api\TopicApiController;
 use App\Http\Controllers\Api\UserApiController;
 use App\Models\Category;
 use App\Models\Notification;
-use App\Models\Topic;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -164,161 +164,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/comments/{comment}/like', [CommentApiController::class, 'like']);
 
     // 時系列: AIで自動生成（トピック作成者限定・未生成の場合のみ）
-    Route::post('/topics/{topic}/timeline/generate', function (Request $request, Topic $topic) {
-        if ($topic->user_id !== $request->user()->id) {
-            return response()->json(['message' => '権限がありません'], 403);
-        }
-        if ($topic->timeline) {
-            return response()->json(['message' => 'すでに時系列は生成されています'], 422);
-        }
-
-        $apiKey = config('services.gemini.api_key');
-        if (!$apiKey) {
-            return response()->json(['message' => 'APIキーが設定されていません'], 500);
-        }
-
-        $prompt = <<<EOT
-以下のトピックの「前提となる歴史的背景や時系列」を抽出・推測し、JSON配列形式で出力してください。
-トピックから直接読み取れない場合は、一般的な歴史的事実に基づき、最大5件程度の重要な出来事を挙げてください。
-
-【トピック名】: {$topic->title}
-【トピック概要】: {$topic->content}
-
-【出力形式の絶対ルール】
-必ず以下の形式のJSON配列のみを出力し、それ以外の説明文やマークダウン（\`\`\`json など）は一切含めないでください。
-[
-    {"date": "YYYY年MM月", "event": "出来事の短い要約"},
-    {"date": "YYYY年MM月", "event": "出来事の短い要約"}
-]
-EOT;
-
-        try {
-            $response = \Illuminate\Support\Facades\Http::post(
-                "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={$apiKey}",
-                [
-                    'contents'         => [['parts' => [['text' => $prompt]]]],
-                    'generationConfig' => ['temperature' => 0.2],
-                ]
-            );
-
-            if ($response->successful()) {
-                $text = $response->json()['candidates'][0]['content']['parts'][0]['text'] ?? '';
-                $text = preg_replace('/```json\n?|```\n?/', '', $text);
-                $text = trim($text);
-                $timeline = json_decode($text, true);
-                if (json_last_error() === JSON_ERROR_NONE && is_array($timeline)) {
-                    $timeline = array_map(fn($item) => array_merge($item, ['is_ai' => true]), $timeline);
-                    $topic->update(['timeline' => $timeline]);
-                    return response()->json(['timeline' => $topic->fresh()->timeline]);
-                }
-                return response()->json(['message' => 'AIの回答を解析できませんでした'], 500);
-            }
-            return response()->json(['message' => 'AIとの通信に失敗しました'], 500);
-        } catch (\Exception $e) {
-            return response()->json(['message' => 'エラーが発生しました: ' . $e->getMessage()], 500);
-        }
-    });
+    Route::post('/topics/{topic}/timeline/generate', [TopicApiController::class, 'timelineGenerate']);
 
     // 時系列: 最新エビデンスからAI更新（トピック作成者限定・生成済みの場合のみ）
-    Route::post('/topics/{topic}/timeline/update', function (Request $request, Topic $topic) {
-        if ($topic->user_id !== $request->user()->id) {
-            return response()->json(['message' => '権限がありません'], 403);
-        }
-        if (!$topic->timeline) {
-            return response()->json(['message' => 'まずは初期の時系列を生成してください'], 422);
-        }
-
-        $apiKey = config('services.gemini.api_key');
-        if (!$apiKey) {
-            return response()->json(['message' => 'APIキーが設定されていません'], 500);
-        }
-
-        $currentTimeline = json_encode($topic->timeline, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-
-        $postsData = "";
-        foreach ($topic->posts()->where('is_published', true)->latest()->take(10)->get() as $post) {
-            $postsData .= "- URL: {$post->url}\n  コメント: {$post->comment}\n\n";
-        }
-        if (empty($postsData)) {
-            $postsData = "新しいエビデンスは特にありません。";
-        }
-
-        $prompt = <<<EOT
-以下のトピックに関する「既存の時系列データ」と「最近追加されたエビデンス（情報）」を提供します。
-これらを統合・分析し、必要であれば新しい出来事を時系列に追加して、最新版のJSON配列として出力してください。
-
-【トピック名】: {$topic->title}
-【トピック概要】: {$topic->content}
-
-【既存の時系列データ】:
-{$currentTimeline}
-
-【新しく追加されたエビデンス】:
-{$postsData}
-
-【出力形式の絶対ルール】
-1. 既存のデータの中で "is_ai": false となっている項目はユーザーが手動で編集した重要なデータです。絶対に削除や改変を行わず、そのまま残してください。
-2. 新しく追加する項目、またはAIが再構成した項目には "is_ai": true を設定してください。
-3. 必ず以下の形式のJSON配列のみを出力し、マークダウン（\`\`\`json など）は一切含めないでください。
-[
-    {"date": "YYYY年MM月", "event": "出来事の短い要約", "is_ai": trueまたはfalse},
-    {"date": "YYYY年MM月", "event": "出来事の短い要約", "is_ai": trueまたはfalse}
-]
-EOT;
-
-        try {
-            $response = \Illuminate\Support\Facades\Http::post(
-                "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={$apiKey}",
-                [
-                    'contents'         => [['parts' => [['text' => $prompt]]]],
-                    'generationConfig' => ['temperature' => 0.2],
-                ]
-            );
-
-            if ($response->successful()) {
-                $text = $response->json()['candidates'][0]['content']['parts'][0]['text'] ?? '';
-                $text = preg_replace('/```json\n?|```\n?/', '', $text);
-                $text = trim($text);
-                $timeline = json_decode($text, true);
-                if (json_last_error() === JSON_ERROR_NONE && is_array($timeline)) {
-                    $timeline = array_map(function ($item) {
-                        $item['is_ai'] = isset($item['is_ai']) ? filter_var($item['is_ai'], FILTER_VALIDATE_BOOLEAN) : true;
-                        return $item;
-                    }, $timeline);
-                    $topic->update(['timeline' => $timeline]);
-                    return response()->json(['timeline' => $topic->fresh()->timeline]);
-                }
-                return response()->json(['message' => 'AIの回答を解析できませんでした'], 500);
-            }
-            return response()->json(['message' => 'AIとの通信に失敗しました'], 500);
-        } catch (\Exception $e) {
-            return response()->json(['message' => 'エラーが発生しました: ' . $e->getMessage()], 500);
-        }
-    });
+    Route::post('/topics/{topic}/timeline/update', [TopicApiController::class, 'timelineUpdate']);
 
     // ブックマーク（トグル）
-    Route::post('/topics/{topic}/bookmark', function (Request $request, Topic $topic) {
-        $user        = $request->user();
-        $isBookmarked = $topic->isSavedBy($user);
-        if ($isBookmarked) {
-            \DB::table('bookmarks')->where('user_id', $user->id)->where('topic_id', $topic->id)->delete();
-            $bookmarked = false;
-        } else {
-            \DB::table('bookmarks')->insert(['user_id' => $user->id, 'topic_id' => $topic->id, 'created_at' => now(), 'updated_at' => now()]);
-            $bookmarked = true;
-            // 通知：トピック作成者が別ユーザーの場合のみ
-            if ($topic->user_id !== $user->id) {
-                Notification::create([
-                    'user_id'         => $topic->user_id,
-                    'actor_id'        => $user->id,
-                    'type'            => 'topic_bookmark',
-                    'notifiable_type' => 'App\\Models\\Topic',
-                    'notifiable_id'   => $topic->id,
-                ]);
-            }
-        }
-        return response()->json(['bookmarked' => $bookmarked]);
-    });
+    Route::post('/topics/{topic}/bookmark', [TopicApiController::class, 'bookmark']);
 
     // 閲覧履歴
     Route::get('/history', [UserApiController::class, 'history']);
@@ -337,13 +189,7 @@ EOT;
     Route::delete('/posts/{post}', [PostApiController::class, 'destroy']);
 
     // トピック削除（自分のトピックのみ）
-    Route::delete('/topics/{topic}', function (Request $request, Topic $topic) {
-        if ($topic->user_id !== $request->user()->id) {
-            return response()->json(['message' => '権限がありません'], 403);
-        }
-        $topic->delete();
-        return response()->json(['message' => '削除しました']);
-    });
+    Route::delete('/topics/{topic}', [TopicApiController::class, 'destroy']);
 
     // 分析ツール
     Route::get('/analyses/{analysis}', [AnalysisApiController::class, 'show']);
@@ -357,36 +203,7 @@ EOT;
     Route::post('/tools/ai-assist', [AnalysisApiController::class, 'aiAssist']);
 
     // カテゴリ管理（管理者専用）
-    Route::post('/categories', function (Request $request) {
-        if (!$request->user()->is_admin) {
-            return response()->json(['message' => '管理者権限が必要です'], 403);
-        }
-        $data = $request->validate([
-            'name'       => 'required|string|max:255',
-            'sort_order' => 'required|integer',
-            'parent_id'  => 'nullable|integer|exists:categories,id',
-        ]);
-        $category = Category::create($data);
-        return response()->json($category, 201);
-    });
-
-    Route::patch('/categories/{category}', function (Request $request, Category $category) {
-        if (!$request->user()->is_admin) {
-            return response()->json(['message' => '管理者権限が必要です'], 403);
-        }
-        $data = $request->validate([
-            'name'       => 'required|string|max:255',
-            'sort_order' => 'required|integer',
-        ]);
-        $category->update($data);
-        return response()->json($category);
-    });
-
-    Route::delete('/categories/{category}', function (Request $request, Category $category) {
-        if (!$request->user()->is_admin) {
-            return response()->json(['message' => '管理者権限が必要です'], 403);
-        }
-        $category->delete();
-        return response()->json(['message' => '削除しました']);
-    });
+    Route::post('/categories', [CategoryApiController::class, 'store']);
+    Route::patch('/categories/{category}', [CategoryApiController::class, 'update']);
+    Route::delete('/categories/{category}', [CategoryApiController::class, 'destroy']);
 });
