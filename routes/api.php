@@ -128,17 +128,32 @@ Route::middleware('auth:sanctum')->group(function () {
 
         $items = collect($notifications->items())->map(function ($n) {
             $topicId = null;
-            if ($n->notifiable_type === 'App\\Models\\Post') {
+            $type    = $n->notifiable_type;
+            // Blade版（lowercase）とAPI版（フルクラス名）の両形式に対応
+            if (in_array($type, ['post', 'App\\Models\\Post'])) {
                 $topicId = \App\Models\Post::find($n->notifiable_id)?->topic_id;
-            } elseif ($n->notifiable_type === 'App\\Models\\Topic') {
+            } elseif (in_array($type, ['topic', 'App\\Models\\Topic'])) {
                 $topicId = $n->notifiable_id;
-            } elseif ($n->notifiable_type === 'App\\Models\\Comment') {
+            } elseif (in_array($type, ['comment', 'App\\Models\\Comment'])) {
                 $topicId = \App\Models\Comment::find($n->notifiable_id)?->topic_id;
+            } elseif (in_array($type, ['analysis', 'App\\Models\\Analysis'])) {
+                $topicId = \App\Models\Analysis::find($n->notifiable_id)?->topic_id;
+            }
+            // モデルの getTextAttribute が空を返す新型通知のテキストを補完
+            $text = $n->text;
+            if ($text === '') {
+                $actorName = $n->actor?->name ?? 'だれか';
+                $text = match ($n->type) {
+                    'comment_like'   => "{$actorName} さんがあなたのコメントを「参考になった」と評価しました",
+                    'analysis_like'  => "{$actorName} さんがあなたの分析を「参考になった」と評価しました",
+                    'topic_bookmark' => "{$actorName} さんがあなたのトピックを保存しました",
+                    default          => '',
+                };
             }
             return [
                 'id'         => $n->id,
                 'type'       => $n->type,
-                'text'       => $n->text,
+                'text'       => $text,
                 'is_unread'  => $n->isUnread(),
                 'created_at' => $n->created_at,
                 'topic_id'   => $topicId,
@@ -313,6 +328,16 @@ Route::middleware('auth:sanctum')->group(function () {
         } else {
             $post->likes()->create(['user_id' => $user->id]);
             $liked = true;
+            // 通知：投稿者が別ユーザーの場合のみ
+            if ($post->user_id !== $user->id) {
+                Notification::create([
+                    'user_id'         => $post->user_id,
+                    'actor_id'        => $user->id,
+                    'type'            => 'post_like',
+                    'notifiable_type' => 'App\\Models\\Post',
+                    'notifiable_id'   => $post->id,
+                ]);
+            }
         }
         return response()->json(['liked' => $liked, 'likes_count' => $post->likes()->count()]);
     });
@@ -342,6 +367,17 @@ Route::middleware('auth:sanctum')->group(function () {
             'parent_id' => $comment->id,
             'body'      => $data['body'],
         ]);
+
+        // 通知：返信先コメントの作成者が別ユーザーの場合のみ
+        if ($comment->user_id !== $user->id) {
+            Notification::create([
+                'user_id'         => $comment->user_id,
+                'actor_id'        => $user->id,
+                'type'            => 'comment_reply',
+                'notifiable_type' => 'App\\Models\\Comment',
+                'notifiable_id'   => $comment->id,
+            ]);
+        }
 
         $reply->load('user:id,name,avatar');
         $reply->loadCount('likes');
@@ -396,8 +432,151 @@ Route::middleware('auth:sanctum')->group(function () {
         } else {
             $comment->likes()->attach($user->id);
             $liked = true;
+            // 通知：コメント作成者が別ユーザーの場合のみ
+            if ($comment->user_id !== $user->id) {
+                Notification::create([
+                    'user_id'         => $comment->user_id,
+                    'actor_id'        => $user->id,
+                    'type'            => 'comment_like',
+                    'notifiable_type' => 'App\\Models\\Comment',
+                    'notifiable_id'   => $comment->id,
+                ]);
+            }
         }
         return response()->json(['liked' => $liked, 'likes_count' => $comment->likes()->count()]);
+    });
+
+    // 時系列: AIで自動生成（トピック作成者限定・未生成の場合のみ）
+    Route::post('/topics/{topic}/timeline/generate', function (Request $request, Topic $topic) {
+        if ($topic->user_id !== $request->user()->id) {
+            return response()->json(['message' => '権限がありません'], 403);
+        }
+        if ($topic->timeline) {
+            return response()->json(['message' => 'すでに時系列は生成されています'], 422);
+        }
+
+        $apiKey = config('services.gemini.api_key');
+        if (!$apiKey) {
+            return response()->json(['message' => 'APIキーが設定されていません'], 500);
+        }
+
+        $prompt = <<<EOT
+以下のトピックの「前提となる歴史的背景や時系列」を抽出・推測し、JSON配列形式で出力してください。
+トピックから直接読み取れない場合は、一般的な歴史的事実に基づき、最大5件程度の重要な出来事を挙げてください。
+
+【トピック名】: {$topic->title}
+【トピック概要】: {$topic->content}
+
+【出力形式の絶対ルール】
+必ず以下の形式のJSON配列のみを出力し、それ以外の説明文やマークダウン（\`\`\`json など）は一切含めないでください。
+[
+    {"date": "YYYY年MM月", "event": "出来事の短い要約"},
+    {"date": "YYYY年MM月", "event": "出来事の短い要約"}
+]
+EOT;
+
+        try {
+            $response = \Illuminate\Support\Facades\Http::post(
+                "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={$apiKey}",
+                [
+                    'contents'         => [['parts' => [['text' => $prompt]]]],
+                    'generationConfig' => ['temperature' => 0.2],
+                ]
+            );
+
+            if ($response->successful()) {
+                $text = $response->json()['candidates'][0]['content']['parts'][0]['text'] ?? '';
+                $text = preg_replace('/```json\n?|```\n?/', '', $text);
+                $text = trim($text);
+                $timeline = json_decode($text, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($timeline)) {
+                    $timeline = array_map(fn($item) => array_merge($item, ['is_ai' => true]), $timeline);
+                    $topic->update(['timeline' => $timeline]);
+                    return response()->json(['timeline' => $topic->fresh()->timeline]);
+                }
+                return response()->json(['message' => 'AIの回答を解析できませんでした'], 500);
+            }
+            return response()->json(['message' => 'AIとの通信に失敗しました'], 500);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'エラーが発生しました: ' . $e->getMessage()], 500);
+        }
+    });
+
+    // 時系列: 最新エビデンスからAI更新（トピック作成者限定・生成済みの場合のみ）
+    Route::post('/topics/{topic}/timeline/update', function (Request $request, Topic $topic) {
+        if ($topic->user_id !== $request->user()->id) {
+            return response()->json(['message' => '権限がありません'], 403);
+        }
+        if (!$topic->timeline) {
+            return response()->json(['message' => 'まずは初期の時系列を生成してください'], 422);
+        }
+
+        $apiKey = config('services.gemini.api_key');
+        if (!$apiKey) {
+            return response()->json(['message' => 'APIキーが設定されていません'], 500);
+        }
+
+        $currentTimeline = json_encode($topic->timeline, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+
+        $postsData = "";
+        foreach ($topic->posts()->where('is_published', true)->latest()->take(10)->get() as $post) {
+            $postsData .= "- URL: {$post->url}\n  コメント: {$post->comment}\n\n";
+        }
+        if (empty($postsData)) {
+            $postsData = "新しいエビデンスは特にありません。";
+        }
+
+        $prompt = <<<EOT
+以下のトピックに関する「既存の時系列データ」と「最近追加されたエビデンス（情報）」を提供します。
+これらを統合・分析し、必要であれば新しい出来事を時系列に追加して、最新版のJSON配列として出力してください。
+
+【トピック名】: {$topic->title}
+【トピック概要】: {$topic->content}
+
+【既存の時系列データ】:
+{$currentTimeline}
+
+【新しく追加されたエビデンス】:
+{$postsData}
+
+【出力形式の絶対ルール】
+1. 既存のデータの中で "is_ai": false となっている項目はユーザーが手動で編集した重要なデータです。絶対に削除や改変を行わず、そのまま残してください。
+2. 新しく追加する項目、またはAIが再構成した項目には "is_ai": true を設定してください。
+3. 必ず以下の形式のJSON配列のみを出力し、マークダウン（\`\`\`json など）は一切含めないでください。
+[
+    {"date": "YYYY年MM月", "event": "出来事の短い要約", "is_ai": trueまたはfalse},
+    {"date": "YYYY年MM月", "event": "出来事の短い要約", "is_ai": trueまたはfalse}
+]
+EOT;
+
+        try {
+            $response = \Illuminate\Support\Facades\Http::post(
+                "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={$apiKey}",
+                [
+                    'contents'         => [['parts' => [['text' => $prompt]]]],
+                    'generationConfig' => ['temperature' => 0.2],
+                ]
+            );
+
+            if ($response->successful()) {
+                $text = $response->json()['candidates'][0]['content']['parts'][0]['text'] ?? '';
+                $text = preg_replace('/```json\n?|```\n?/', '', $text);
+                $text = trim($text);
+                $timeline = json_decode($text, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($timeline)) {
+                    $timeline = array_map(function ($item) {
+                        $item['is_ai'] = isset($item['is_ai']) ? filter_var($item['is_ai'], FILTER_VALIDATE_BOOLEAN) : true;
+                        return $item;
+                    }, $timeline);
+                    $topic->update(['timeline' => $timeline]);
+                    return response()->json(['timeline' => $topic->fresh()->timeline]);
+                }
+                return response()->json(['message' => 'AIの回答を解析できませんでした'], 500);
+            }
+            return response()->json(['message' => 'AIとの通信に失敗しました'], 500);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'エラーが発生しました: ' . $e->getMessage()], 500);
+        }
     });
 
     // ブックマーク（トグル）
@@ -410,6 +589,16 @@ Route::middleware('auth:sanctum')->group(function () {
         } else {
             \DB::table('bookmarks')->insert(['user_id' => $user->id, 'topic_id' => $topic->id, 'created_at' => now(), 'updated_at' => now()]);
             $bookmarked = true;
+            // 通知：トピック作成者が別ユーザーの場合のみ
+            if ($topic->user_id !== $user->id) {
+                Notification::create([
+                    'user_id'         => $topic->user_id,
+                    'actor_id'        => $user->id,
+                    'type'            => 'topic_bookmark',
+                    'notifiable_type' => 'App\\Models\\Topic',
+                    'notifiable_id'   => $topic->id,
+                ]);
+            }
         }
         return response()->json(['bookmarked' => $bookmarked]);
     });
@@ -707,6 +896,16 @@ Route::middleware('auth:sanctum')->group(function () {
         } else {
             $analysis->likes()->attach($user->id);
             $liked = true;
+            // 通知：分析作成者が別ユーザーの場合のみ
+            if ($analysis->user_id !== $user->id) {
+                Notification::create([
+                    'user_id'         => $analysis->user_id,
+                    'actor_id'        => $user->id,
+                    'type'            => 'analysis_like',
+                    'notifiable_type' => 'App\\Models\\Analysis',
+                    'notifiable_id'   => $analysis->id,
+                ]);
+            }
         }
         return response()->json(['liked' => $liked, 'likes_count' => $analysis->likes()->count()]);
     });
