@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\StoreCategoryRequest;
 use App\Http\Requests\Api\UpdateCategoryRequest;
+use App\Http\Resources\Api\CategoryResource;
 use App\Models\Category;
 use Illuminate\Http\Request;
 
@@ -18,7 +19,7 @@ class CategoryApiController extends Controller
         }
         $data = $request->validated();
         $category = Category::create($data);
-        return response()->json($category, 201);
+        return (new CategoryResource($category))->response()->setStatusCode(201);
     }
 
     // カテゴリ更新（管理者専用）
@@ -29,7 +30,7 @@ class CategoryApiController extends Controller
         }
         $data = $request->validated();
         $category->update($data);
-        return response()->json($category);
+        return new CategoryResource($category);
     }
 
     // カテゴリ削除（管理者専用）

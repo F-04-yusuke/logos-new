@@ -9,6 +9,7 @@ use App\Http\Requests\Api\StoreAnalysisImageRequest;
 use App\Http\Requests\Api\StoreAnalysisRequest;
 use App\Http\Requests\Api\SupplementRequest;
 use App\Http\Requests\Api\UpdateAnalysisRequest;
+use App\Http\Resources\Api\AnalysisResource;
 use App\Models\Analysis;
 use App\Models\Notification;
 use App\Models\Topic;
@@ -20,14 +21,9 @@ class AnalysisApiController extends Controller
     public function show(Request $request, Analysis $analysis)
     {
         $user = $request->user();
-        $data = $analysis->toArray();
-        $data['user'] = \App\Models\User::select('id', 'name', 'avatar')->find($analysis->user_id);
-        $data['topic'] = $analysis->topic_id
-            ? Topic::select('id', 'title')->find($analysis->topic_id)
-            : null;
-        $data['likes_count']    = $analysis->likes()->count();
-        $data['is_liked_by_me'] = $analysis->likes()->where('user_id', $user->id)->exists();
-        return response()->json($data);
+        $analysis->load(['user:id,name,avatar', 'topic:id,title'])->loadCount('likes');
+        $analysis->is_liked_by_me = $analysis->likes()->where('user_id', $user->id)->exists();
+        return new AnalysisResource($analysis);
     }
 
     // 分析ツール: 新規保存（PRO限定）
