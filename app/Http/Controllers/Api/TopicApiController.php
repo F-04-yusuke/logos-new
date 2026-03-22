@@ -45,6 +45,14 @@ class TopicApiController extends Controller
         ]);
 
         $data = $topic->toArray();
+
+        $analyses = \App\Models\Analysis::where('topic_id', $topic->id)
+            ->where('is_published', true)
+            ->with('user:id,name,avatar')
+            ->withCount('likes')
+            ->latest()
+            ->get();
+        $data['analyses'] = $analyses->toArray();
         $data['user_has_commented'] = false;
         $data['is_bookmarked'] = false;
 
@@ -92,6 +100,20 @@ class TopicApiController extends Controller
                 unset($reply);
             }
             unset($comment);
+
+            // Analysis likes
+            $analysisIds = collect($data['analyses'] ?? [])->pluck('id')->toArray();
+            if (!empty($analysisIds)) {
+                $likedAnalysisIds = \Illuminate\Support\Facades\DB::table('analysis_likes')
+                    ->where('user_id', $authUser->id)
+                    ->whereIn('analysis_id', $analysisIds)
+                    ->pluck('analysis_id')
+                    ->toArray();
+                foreach ($data['analyses'] as &$analysis) {
+                    $analysis['is_liked_by_me'] = in_array($analysis['id'], $likedAnalysisIds);
+                }
+                unset($analysis);
+            }
         }
 
         return response()->json($data);

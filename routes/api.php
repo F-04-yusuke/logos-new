@@ -317,6 +317,75 @@ Route::middleware('auth:sanctum')->group(function () {
         return response()->json(['liked' => $liked, 'likes_count' => $post->likes()->count()]);
     });
 
+    // コメント返信投稿（制限付き: 投稿主5件・他1件）
+    Route::post('/comments/{comment}/reply', function (Request $request, \App\Models\Comment $comment) {
+        $user = $request->user();
+        $data = $request->validate(['body' => 'required|string|max:10000']);
+
+        $myRepliesCount = \App\Models\Comment::where('parent_id', $comment->id)
+            ->where('user_id', $user->id)
+            ->count();
+
+        if ($comment->user_id === $user->id) {
+            if ($myRepliesCount >= 5) {
+                return response()->json(['message' => '補足は最大5件までです'], 422);
+            }
+        } else {
+            if ($myRepliesCount >= 1) {
+                return response()->json(['message' => 'このコメントへの返信は1件のみ可能です'], 422);
+            }
+        }
+
+        $reply = \App\Models\Comment::create([
+            'user_id'   => $user->id,
+            'topic_id'  => $comment->topic_id,
+            'parent_id' => $comment->id,
+            'body'      => $data['body'],
+        ]);
+
+        $reply->load('user:id,name,avatar');
+        $reply->loadCount('likes');
+
+        return response()->json($reply, 201);
+    });
+
+    // コメント削除（自分のコメント・返信のみ）
+    Route::delete('/comments/{comment}', function (Request $request, \App\Models\Comment $comment) {
+        if ($comment->user_id !== $request->user()->id) {
+            return response()->json(['message' => '権限がありません'], 403);
+        }
+        $comment->delete();
+        return response()->json(['message' => '削除しました']);
+    });
+
+    // 投稿補足（投稿者本人・1回のみ）
+    Route::post('/posts/{post}/supplement', function (Request $request, \App\Models\Post $post) {
+        if ($post->user_id !== $request->user()->id) {
+            return response()->json(['message' => '権限がありません'], 403);
+        }
+        if ($post->supplement !== null) {
+            return response()->json(['message' => '補足はすでに追加済みです'], 422);
+        }
+        $data = $request->validate(['supplement' => 'required|string|max:5000']);
+        $post->supplement = $data['supplement'];
+        $post->save();
+        return response()->json(['supplement' => $post->supplement]);
+    });
+
+    // 分析補足（投稿者本人・1回のみ）
+    Route::post('/analyses/{analysis}/supplement', function (Request $request, \App\Models\Analysis $analysis) {
+        if ($analysis->user_id !== $request->user()->id) {
+            return response()->json(['message' => '権限がありません'], 403);
+        }
+        if ($analysis->supplement !== null) {
+            return response()->json(['message' => '補足はすでに追加済みです'], 422);
+        }
+        $data = $request->validate(['supplement' => 'required|string|max:5000']);
+        $analysis->supplement = $data['supplement'];
+        $analysis->save();
+        return response()->json(['supplement' => $analysis->supplement]);
+    });
+
     // コメントいいね（トグル）
     Route::post('/comments/{comment}/like', function (Request $request, \App\Models\Comment $comment) {
         $user   = $request->user();
@@ -492,12 +561,16 @@ Route::middleware('auth:sanctum')->group(function () {
             ->latest()
             ->get(['id', 'title', 'created_at']);
 
+        $analyses = \App\Models\Analysis::where('user_id', $user->id)
+            ->latest()
+            ->get(['id', 'title', 'type', 'is_published', 'topic_id', 'created_at']);
+
         return response()->json([
             'posts'       => $posts,
             'drafts'      => $drafts,
             'draft_count' => $drafts->count(),
             'comments'    => $comments,
-            'analyses'    => [],
+            'analyses'    => $analyses,
             'topics'      => $topics,
         ]);
     });
@@ -518,6 +591,124 @@ Route::middleware('auth:sanctum')->group(function () {
         }
         $topic->delete();
         return response()->json(['message' => '削除しました']);
+    });
+
+    // 分析ツール: 一件取得（編集用）
+    Route::get('/analyses/{analysis}', function (Request $request, \App\Models\Analysis $analysis) {
+        if ($analysis->user_id !== $request->user()->id) {
+            return response()->json(['message' => '権限がありません'], 403);
+        }
+        return response()->json($analysis);
+    });
+
+    // 分析ツール: 新規保存
+    Route::post('/analyses', function (Request $request) {
+        $user = $request->user();
+        if (!$user->is_pro) {
+            return response()->json(['message' => 'PRO会員限定の機能です'], 403);
+        }
+        $data = $request->validate([
+            'title' => 'required|string|max:255',
+            'type'  => 'required|string|in:tree,matrix,swot',
+            'data'  => 'required|array',
+        ]);
+        $analysis = \App\Models\Analysis::create([
+            'user_id'      => $user->id,
+            'title'        => $data['title'],
+            'type'         => $data['type'],
+            'data'         => $data['data'],
+            'is_published' => false,
+        ]);
+        return response()->json(['message' => '保存しました！', 'id' => $analysis->id], 201);
+    });
+
+    // 分析ツール: 上書き保存
+    Route::put('/analyses/{analysis}', function (Request $request, \App\Models\Analysis $analysis) {
+        if ($analysis->user_id !== $request->user()->id) {
+            return response()->json(['message' => '権限がありません'], 403);
+        }
+        $data = $request->validate([
+            'title' => 'nullable|string|max:255',
+            'data'  => 'required|array',
+        ]);
+        $analysis->update([
+            'title' => $data['title'] ?? $analysis->title,
+            'data'  => $data['data'],
+        ]);
+        return response()->json(['message' => '上書き保存しました！']);
+    });
+
+    // 分析ツール: 削除
+    Route::delete('/analyses/{analysis}', function (Request $request, \App\Models\Analysis $analysis) {
+        if ($analysis->user_id !== $request->user()->id) {
+            return response()->json(['message' => '権限がありません'], 403);
+        }
+        $analysis->delete();
+        return response()->json(['message' => '削除しました']);
+    });
+
+    // AIアシスタント (Gemini)
+    Route::post('/tools/ai-assist', function (Request $request) {
+        $request->validate([
+            'prompt'  => 'required|string|max:5000',
+            'context' => 'nullable|string|max:10000',
+        ]);
+
+        $apiKey = config('services.gemini.api_key');
+        if (!$apiKey) {
+            return response()->json(['error' => 'Gemini APIキーが設定されていません'], 500);
+        }
+
+        $fullPrompt = "あなたは政治・経済の議論を整理するプロのコンサルタントです。\n"
+                    . "以下の【現在の状況・データ】を踏まえて、ユーザーの【指示】に的確に答えてください。\n\n"
+                    . "【現在の状況・データ】\n" . ($request->context ?? '') . "\n\n"
+                    . "【指示】\n" . $request->prompt;
+
+        $response = \Illuminate\Support\Facades\Http::withHeaders([
+            'Content-Type' => 'application/json',
+        ])->post("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={$apiKey}", [
+            'contents' => [['parts' => [['text' => $fullPrompt]]]]
+        ]);
+
+        if ($response->successful()) {
+            $result = $response->json();
+            $text = $result['candidates'][0]['content']['parts'][0]['text'] ?? 'AIからの回答を取得できませんでした。';
+            return response()->json(['reply' => $text]);
+        }
+
+        return response()->json(['error' => 'APIエラー: ' . $response->body()], 500);
+    });
+
+    // ユーザーの分析一覧（モーダル選択用）
+    Route::get('/user/analyses', function (Request $request) {
+        $user = $request->user();
+        $analyses = \App\Models\Analysis::where('user_id', $user->id)
+            ->latest()
+            ->get(['id', 'title', 'type', 'is_published', 'topic_id', 'created_at']);
+        return response()->json($analyses);
+    });
+
+    // 分析をトピックに公開
+    Route::post('/analyses/{analysis}/publish', function (Request $request, \App\Models\Analysis $analysis) {
+        if ($analysis->user_id !== $request->user()->id) {
+            return response()->json(['message' => '権限がありません'], 403);
+        }
+        $data = $request->validate(['topic_id' => 'required|integer|exists:topics,id']);
+        $analysis->update(['topic_id' => $data['topic_id'], 'is_published' => true]);
+        return response()->json(['message' => '公開しました']);
+    });
+
+    // 分析いいね（トグル）
+    Route::post('/analyses/{analysis}/like', function (Request $request, \App\Models\Analysis $analysis) {
+        $user = $request->user();
+        if ($analysis->likes()->where('user_id', $user->id)->exists()) {
+            $analysis->likes()->detach($user->id);
+            $liked = false;
+        } else {
+            $analysis->likes()->attach($user->id);
+            $liked = true;
+        }
+        return response()->json(['liked' => $liked, 'likes_count' => $analysis->likes()->count()]);
     });
 
     // カテゴリ管理（管理者専用）
